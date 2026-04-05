@@ -37,6 +37,10 @@ Create your env values from `backend/.env.example`:
 - `DB_PASSWORD`
 - `JWT_SECRET` (Base64 encoded, strong secret)
 - `JWT_EXPIRATION_MS`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `CLOUDINARY_FOLDER` (optional)
 
 Example (zsh):
 
@@ -46,6 +50,10 @@ export DB_USERNAME="postgres"
 export DB_PASSWORD="your_password"
 export JWT_SECRET="your_base64_secret"
 export JWT_EXPIRATION_MS="86400000"
+export CLOUDINARY_CLOUD_NAME="your_cloud_name"
+export CLOUDINARY_API_KEY="your_api_key"
+export CLOUDINARY_API_SECRET="your_api_secret"
+export CLOUDINARY_FOLDER="appifylab/posts"
 ```
 
 ## Run PostgreSQL with Docker (Optional)
@@ -129,6 +137,16 @@ Authorization: Bearer <token>
 ```
 
 - `GET /posts` - fetch feed
+- `POST /posts/upload-image` - upload post image (multipart/form-data)
+  - field: `image`
+  - returns:
+
+```json
+{
+  "imageUrl": "https://res.cloudinary.com/..."
+}
+```
+
 - `POST /posts` - create post
   - body:
 
