@@ -33,6 +33,20 @@ The original static HTML templates (`login.html`, `registration.html`, `feed.htm
 - `scripts/smoke-test.sh` - quick backend auth/feed smoke test
 - `backend/src/main/resources/db/migration/` - Flyway schema/version migrations
 
+## UI Screenshots
+
+### Login
+
+![Login UI](assets/LogIn%20Page.png)
+
+### Register
+
+![Register UI](assets/Register%20Page.png)
+
+### Feed
+
+![Feed UI](assets/Feed%20Page.png)
+
 ## Tech Stack
 
 - Frontend: React 18, React Router, Vite 5

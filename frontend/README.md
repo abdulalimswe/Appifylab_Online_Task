@@ -1,4 +1,4 @@
-te# Frontend Documentation
+# Frontend Documentation
 
 React + Vite client for the Appifylab Online Task social feed.
 
@@ -13,6 +13,22 @@ This frontend provides the full user-facing experience for:
 - Post and comment like/unlike interactions
 
 The UI is based on the provided design assets in the root `assets/` directory.
+
+## UI Screenshots
+
+The following screenshots are stored in the root `assets/` folder and document the main frontend flows.
+
+### Login Page
+
+![Login Page](../assets/LogIn%20Page.png)
+
+### Register Page
+
+![Register Page](../assets/Register%20Page.png)
+
+### Feed Page
+
+![Feed Page](../assets/Feed%20Page.png)
 
 ## Feature Highlights
 
@@ -170,4 +186,3 @@ This ensures newly registered users render with a valid avatar even when backend
 - Backend docs: `backend/README.md`
 - Backend env template: `backend/.env.example`
 - Frontend env template: `frontend/.env.example`
-
