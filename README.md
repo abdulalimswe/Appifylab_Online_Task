@@ -74,7 +74,7 @@ From repository root:
 docker compose up -d postgres
 ```
 
-> `docker-compose.yml` uses `POSTGRES_USER=root`, `POSTGRES_PASSWORD=REDACTED_DB_PASSWORD`, and DB `appifylab_social`.
+> `docker-compose.yml` now reads `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` from environment variables (with safe local defaults).
 
 ### 2) Run Backend
 
@@ -116,7 +116,7 @@ Main variables:
 Important:
 
 - Ensure `DB_USERNAME` matches your PostgreSQL user.
-- If using the provided Docker Compose defaults, use `root` for the DB user.
+- Ensure `DB_PASSWORD` matches your running PostgreSQL password.
 - If Cloudinary variables are empty, image upload endpoint may fail depending on your runtime config.
 
 ### Frontend (`frontend/.env.example`)

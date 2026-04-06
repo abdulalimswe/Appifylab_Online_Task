@@ -64,7 +64,7 @@ From repository root:
 docker compose up -d postgres
 ```
 
-> Note: `docker-compose.yml` currently defines `POSTGRES_USER=root`. Make sure your `DB_USERNAME` matches the database user you run with.
+> Note: `docker-compose.yml` reads `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` from environment variables (with local defaults). Ensure backend `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` match.
 
 ## Run the Backend
 
@@ -247,4 +247,3 @@ Custom base URL:
 ```bash
 BASE_URL="http://localhost:8080" ./scripts/smoke-test.sh
 ```
-
