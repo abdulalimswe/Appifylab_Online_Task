@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { createPost, fetchPosts, sortByNewestFirst, uploadPostImage } from "../api/client";
+import { useNavigate } from "react-router-dom";
+import { UnauthorizedError, createPost, fetchPosts, sortByNewestFirst, uploadPostImage } from "../api/client";
 import {
   ComposerCard,
   EventList,
@@ -14,7 +15,8 @@ import { useAuth } from "../context/AuthContext";
 import { demoPosts, eventCards, exploreItems, rightSidebarPeople, sortSeedPostsNewestFirst, storyCards, suggestedPeople } from "../data/feedSeeds";
 
 function FeedPage() {
-  const { token, fullName, email, logout } = useAuth();
+  const navigate = useNavigate();
+  const { token, fullName, email, profilePhotoUrl, logout } = useAuth();
   const [posts, setPosts] = useState(() => sortSeedPostsNewestFirst(demoPosts));
   const [composerContent, setComposerContent] = useState("");
   const [composerVisibility, setComposerVisibility] = useState("Public");
@@ -28,7 +30,7 @@ function FeedPage() {
   const imageRef = useRef(null);
   const objectUrlRef = useRef("");
 
-  const profileAvatar = "/assets/images/profile.png";
+  const profileAvatar = profilePhotoUrl || "/assets/images/profile-avater.png";
   const currentUser = {
     id: email || fullName || "current-user",
     name: fullName || email || "User",
@@ -55,6 +57,9 @@ function FeedPage() {
           setPosts(sortSeedPostsNewestFirst(demoPosts));
         }
       } catch (err) {
+        if (handleUnauthorized(err)) {
+          return;
+        }
         if (active) {
           setLoadError(err.message || "Unable to load feed");
           setPosts(sortSeedPostsNewestFirst(demoPosts));
@@ -85,6 +90,16 @@ function FeedPage() {
     if (!file) {
       return;
     }
+
+    if (!file.type.startsWith("image/")) {
+      setComposerError("Please select a valid image file");
+      if (imageRef.current) {
+        imageRef.current.value = "";
+      }
+      return;
+    }
+
+    setComposerError("");
 
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current);
@@ -128,14 +143,22 @@ function FeedPage() {
       const created = await createPost(token, {
         content: composerContent.trim(),
         visibility: String(composerVisibility || "PUBLIC").toUpperCase(),
-        imageUrl: uploadedImageUrl || null
+        ...(uploadedImageUrl ? { imageUrl: uploadedImageUrl } : {})
       });
 
       setPosts((current) => sortByNewestFirst([created, ...current]));
       setComposerContent("");
       handleImageClear();
     } catch (err) {
-      setComposerError(err.message || "Failed to create post");
+      if (handleUnauthorized(err)) {
+        return;
+      }
+      const message = err.message || "Failed to create post";
+      if (message.toLowerCase().includes("upload")) {
+        setComposerError(`${message}. You can remove the image and try again.`);
+      } else {
+        setComposerError(message);
+      }
     } finally {
       setPosting(false);
     }
@@ -145,10 +168,24 @@ function FeedPage() {
     imageRef.current?.click();
   }
 
+  function handleUnauthorized(error) {
+    if (!(error instanceof UnauthorizedError)) {
+      return false;
+    }
+
+    logout();
+    navigate("/login", { replace: true });
+    return true;
+  }
+
+  function handlePostUpdated(nextPost) {
+    setPosts((current) => current.map((p) => (String(p.id) === String(nextPost.id) ? nextPost : p)));
+  }
+
   return (
     <div className="_layout _layout_main_wrapper social-feed-shell">
       <div className="_main_layout">
-        <FeedHeader fullName={fullName} email={email} onLogout={logout} />
+        <FeedHeader fullName={fullName} email={email} avatarSrc={profileAvatar} onLogout={logout} />
 
         <div className="container _custom_container">
           <div className="_layout_inner_wrap">
@@ -207,7 +244,17 @@ function FeedPage() {
 
                     <div className="feed-post-list">
                       {posts.map((post) => (
-                        <PostCard key={post.id} post={post} currentUser={currentUser} />
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          currentUser={currentUser}
+                          token={token}
+                          onPostUpdated={handlePostUpdated}
+                          onUnauthorized={() => {
+                            logout();
+                            navigate("/login", { replace: true });
+                          }}
+                        />
                       ))}
                     </div>
                   </div>

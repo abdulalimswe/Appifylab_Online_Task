@@ -1,5 +1,7 @@
 package com.appifylab.social.entity;
 
+import com.appifylab.social.service.UserProfileDefaults;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -27,6 +29,9 @@ public class UserAccount {
     @Column(nullable = false, length = 120)
     private String fullName;
 
+    @Column(name = "profile_photo_url", nullable = false, length = 1024)
+    private String profilePhotoUrl;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -35,6 +40,8 @@ public class UserAccount {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
         }
+
+        profilePhotoUrl = UserProfileDefaults.resolveProfilePhotoUrl(profilePhotoUrl);
     }
 
     public Long getId() {
@@ -67,6 +74,14 @@ public class UserAccount {
 
     public OffsetDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getProfilePhotoUrl() {
+        return profilePhotoUrl;
+    }
+
+    public void setProfilePhotoUrl(String profilePhotoUrl) {
+        this.profilePhotoUrl = profilePhotoUrl;
     }
 }
 

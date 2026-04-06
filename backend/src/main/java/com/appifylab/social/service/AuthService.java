@@ -45,6 +45,7 @@ public class AuthService {
         user.setFullName(request.fullName().trim());
         user.setEmail(normalizedEmail);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setProfilePhotoUrl(UserProfileDefaults.DEFAULT_PROFILE_PHOTO_URL);
 
         UserAccount savedUser = userAccountRepository.save(user);
         String token = jwtService.generateToken(
@@ -54,7 +55,12 @@ public class AuthService {
                         .build()
         );
 
-        return new AuthResponse(token, savedUser.getEmail(), savedUser.getFullName());
+        return new AuthResponse(
+                token,
+                savedUser.getEmail(),
+                savedUser.getFullName(),
+                UserProfileDefaults.resolveProfilePhotoUrl(savedUser.getProfilePhotoUrl())
+        );
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -78,6 +84,11 @@ public class AuthService {
                         .build()
         );
 
-        return new AuthResponse(token, user.getEmail(), user.getFullName());
+        return new AuthResponse(
+                token,
+                user.getEmail(),
+                user.getFullName(),
+                UserProfileDefaults.resolveProfilePhotoUrl(user.getProfilePhotoUrl())
+        );
     }
 }

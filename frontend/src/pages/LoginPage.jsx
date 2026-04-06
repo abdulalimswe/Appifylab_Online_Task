@@ -21,7 +21,13 @@ function LoginPage() {
 
     try {
       const data = await login({ email: email.trim(), password });
-      auth.login({ token: data.token, fullName: data.fullName, email: data.email, rememberMe });
+      auth.login({
+        token: data.token,
+        fullName: data.fullName,
+        email: data.email,
+        profilePhotoUrl: data.profilePhotoUrl,
+        rememberMe
+      });
       const nextPath = location.state?.from || "/feed";
       navigate(nextPath, { replace: true });
     } catch (err) {
@@ -43,12 +49,6 @@ function LoginPage() {
       footerLinkLabel="Create New Account"
       footerLinkTo="/register"
     >
-      <button type="button" className="_social_login_content_btn _mar_b40">
-        <img src="/assets/images/google.svg" alt="Google" className="_google_img" /> <span>Or sign-in with google</span>
-      </button>
-      <div className="_social_login_content_bottom_txt _mar_b40">
-        <span>Or</span>
-      </div>
 
       <form className="_social_login_form" onSubmit={handleSubmit}>
         <div className="row">

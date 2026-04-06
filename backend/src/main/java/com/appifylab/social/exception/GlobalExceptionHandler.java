@@ -4,6 +4,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,9 +33,23 @@ public class GlobalExceptionHandler {
         return build(status, exception.getMessage(), null);
     }
 
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, Object>> handleMultipart(MultipartException exception) {
+        return build(HttpStatus.BAD_REQUEST, "Invalid upload request. Please attach an image file and try again", null);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUpload(MaxUploadSizeExceededException exception) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "Image file is too large (max 10 MB)", null);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleUnexpected(Exception exception) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error", null);
+        String message = exception.getMessage();
+        if (message == null || message.isBlank()) {
+            message = "Unexpected server error";
+        }
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
     }
 
     private ResponseEntity<Map<String, Object>> build(HttpStatus status, String message, Object details) {

@@ -84,6 +84,8 @@ Flyway runs automatically at startup.
 
 - `V1__init.sql` - users and posts
 - `V2__feed_interactions.sql` - post visibility/image, comments, reactions
+- `V3__user_profile_photo.sql` - user `profile_photo_url` default/backfill
+- `V4__default_profile_avatar_rename.sql` - switch default avatar path to `profile-avater.png`
 
 If migration fails, verify:
 
@@ -124,7 +126,8 @@ Returns:
 {
   "token": "...",
   "email": "john@example.com",
-  "fullName": "John Doe"
+  "fullName": "John Doe",
+  "profilePhotoUrl": "/assets/images/profile-avater.png"
 }
 ```
 

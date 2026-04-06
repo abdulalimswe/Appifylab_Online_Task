@@ -12,6 +12,7 @@ public record PostResponse(
         PostVisibility visibility,
         String authorName,
         String authorEmail,
+        String authorAvatar,
         OffsetDateTime createdAt,
         ReactionSummaryResponse reactions,
         List<CommentResponse> comments

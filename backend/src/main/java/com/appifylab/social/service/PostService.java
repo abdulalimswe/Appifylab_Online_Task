@@ -163,7 +163,11 @@ public class PostService {
         validateTargetForInteraction(targetType, targetId, user);
 
         return reactionRepository.findAllByTargetTypeAndTargetIdOrderByCreatedAtDesc(targetType, targetId).stream()
-                .map(reaction -> new LikerResponse(reaction.getUser().getFullName(), reaction.getUser().getEmail()))
+                .map(reaction -> new LikerResponse(
+                        reaction.getUser().getFullName(),
+                        reaction.getUser().getEmail(),
+                        profilePhoto(reaction.getUser())
+                ))
                 .toList();
     }
 
@@ -187,6 +191,7 @@ public class PostService {
                 post.getVisibility(),
                 post.getAuthor().getFullName(),
                 post.getAuthor().getEmail(),
+                profilePhoto(post.getAuthor()),
                 post.getCreatedAt(),
                 toReactionSummary(postReactions.getOrDefault(post.getId(), List.of()), currentUserId),
                 commentResponses
@@ -209,6 +214,7 @@ public class PostService {
                 comment.getContent(),
                 comment.getAuthor().getFullName(),
                 comment.getAuthor().getEmail(),
+                profilePhoto(comment.getAuthor()),
                 comment.getCreatedAt(),
                 toReactionSummary(commentReactions.getOrDefault(comment.getId(), List.of()), currentUserId),
                 replies
@@ -238,7 +244,7 @@ public class PostService {
                 .map(Reaction::getUser)
                 .collect(Collectors.toMap(
                         UserAccount::getId,
-                        user -> new LikerResponse(user.getFullName(), user.getEmail()),
+                        user -> new LikerResponse(user.getFullName(), user.getEmail(), profilePhoto(user)),
                         (left, right) -> left,
                         LinkedHashMap::new
                 ))
@@ -301,6 +307,10 @@ public class PostService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String profilePhoto(UserAccount user) {
+        return UserProfileDefaults.resolveProfilePhotoUrl(user.getProfilePhotoUrl());
     }
 }
 

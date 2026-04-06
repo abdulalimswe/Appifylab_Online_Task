@@ -33,7 +33,12 @@ function RegistrationPage() {
       const fullNameFromEmail = email.includes("@") ? email.split("@")[0] : email;
       const fullName = fullNameFromEmail.trim().length >= 2 ? fullNameFromEmail.trim() : "New User";
       const data = await register({ fullName, email: email.trim(), password });
-      auth.login({ token: data.token, fullName: data.fullName, email: data.email });
+      auth.login({
+        token: data.token,
+        fullName: data.fullName,
+        email: data.email,
+        profilePhotoUrl: data.profilePhotoUrl
+      });
       navigate("/feed", { replace: true });
     } catch (err) {
       setError(err.message || "Registration failed");
@@ -55,12 +60,6 @@ function RegistrationPage() {
       footerLinkLabel="Log In"
       footerLinkTo="/login"
     >
-      <button type="button" className="_social_registration_content_btn _mar_b40">
-        <img src="/assets/images/google.svg" alt="Google" className="_google_img" /> <span>Register with google</span>
-      </button>
-      <div className="_social_registration_content_bottom_txt _mar_b40">
-        <span>Or</span>
-      </div>
 
       <form className="_social_registration_form" onSubmit={handleSubmit}>
         <div className="row">

@@ -1,11 +1,55 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  UnauthorizedError,
+  createComment,
+  createReply,
+  likeReaction,
+  unlikeReaction,
+  mergePostWithReactionSummary,
+  mergeCommentWithReactionSummary,
+  REACTION_TARGET
+} from "../api/client";
+
+function isPersistedEntityId(id) {
+  if (typeof id === "number" && Number.isFinite(id) && id > 0) {
+    return true;
+  }
+  if (typeof id === "string" && /^\d+$/.test(id.trim())) {
+    return true;
+  }
+  return false;
+}
+
+function updateCommentInTree(comments, targetId, updater) {
+  return comments.map((c) => {
+    if (String(c.id) === String(targetId)) {
+      return updater(c);
+    }
+    if (c.replies?.length) {
+      return { ...c, replies: updateCommentInTree(c.replies, targetId, updater) };
+    }
+    return c;
+  });
+}
+
+function addReplyToThread(comments, parentId, newReply) {
+  return comments.map((c) => {
+    if (String(c.id) === String(parentId)) {
+      return { ...c, replies: [...(c.replies || []), newReply] };
+    }
+    if (c.replies?.length) {
+      return { ...c, replies: addReplyToThread(c.replies, parentId, newReply) };
+    }
+    return c;
+  });
+}
 
 function buildCurrentUserLike(currentUser) {
   return {
     id: currentUser?.id || currentUser?.email || "current-user",
     name: currentUser?.name || currentUser?.email || "User",
     email: currentUser?.email || "",
-    avatar: currentUser?.avatar || "/assets/images/profile.png"
+    avatar: currentUser?.avatar || "/assets/images/profile-avater.png"
   };
 }
 
@@ -33,20 +77,21 @@ function Avatar({ src, alt, size = 44, className = "" }) {
   return <img src={src} alt={alt} width={size} height={size} className={className} />;
 }
 
-function IconButton({ children, active, onClick, className = "", title }) {
+function IconButton({ children, active, onClick, className = "", title, disabled = false }) {
   return (
     <button
       type="button"
       className={`${className} ${active ? "is-active" : ""}`.trim()}
       onClick={onClick}
       title={title}
+      disabled={disabled}
     >
       {children}
     </button>
   );
 }
 
-export function FeedHeader({ fullName, email, onLogout }) {
+export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
   const [profileOpen, setProfileOpen] = useState(false);
 
   return (
@@ -117,7 +162,7 @@ export function FeedHeader({ fullName, email, onLogout }) {
 
           <div className="_header_nav_profile">
             <div className="_header_nav_profile_image">
-              <img src="/assets/images/profile.png" alt="Profile" className="_nav_profile_img" />
+              <img src={avatarSrc || "/assets/images/profile-avater.png"} alt="Profile" className="_nav_profile_img" />
             </div>
             <div className="_header_nav_dropdown">
               <div className="_header_nav_name_block">
@@ -140,7 +185,7 @@ export function FeedHeader({ fullName, email, onLogout }) {
               <div id="_prfoile_drop" className="_nav_profile_dropdown _profile_dropdown show">
                 <div className="_nav_profile_dropdown_info">
                   <div className="_nav_profile_dropdown_image">
-                    <img src="/assets/images/profile.png" alt="Profile" className="_nav_drop_img" />
+                    <img src={avatarSrc || "/assets/images/profile-avater.png"} alt="Profile" className="_nav_drop_img" />
                   </div>
                   <div className="_nav_profile_dropdown_info_txt">
                     <h4 className="_nav_dropdown_title">{fullName || "Guest user"}</h4>
@@ -388,7 +433,10 @@ export function ComposerCard({
             <button
               type="button"
               className={`_feed_inner_text_area_bottom_photo_link ${activeAction === "photo" ? "is-active" : ""}`}
-              onClick={() => setActiveAction("photo")}
+              onClick={() => {
+                setActiveAction("photo");
+                onImagePick();
+              }}
             >
               <span className="_feed_inner_text_area_bottom_photo_iamge _mar_img">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
@@ -401,7 +449,7 @@ export function ComposerCard({
         </div>
         <div className="_feed_inner_text_area_item">
           <div className="_feed_inner_text_area_bottom_video _feed_common">
-            <button type="button" className="_feed_inner_text_area_bottom_photo_link" onClick={onImagePick}>
+            <button type="button" className="_feed_inner_text_area_bottom_photo_link" onClick={() => setActiveAction("video")}>
               <span className="_feed_inner_text_area_bottom_photo_iamge _mar_img">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="24" fill="none" viewBox="0 0 22 24">
                   <path fill="#666" d="M11.485 4.5c2.213 0 3.753 1.534 3.917 3.784l2.418-1.082c1.047-.468 2.188.327 2.271 1.533l.005.141v6.64c0 1.237-1.103 2.093-2.155 1.72l-.121-.047-2.418-1.083c-.164 2.25-1.708 3.785-3.917 3.785H5.76c-2.343 0-3.932-1.72-3.932-4.188V8.688c0-2.47 1.589-4.188 3.932-4.188h5.726zm0 1.5H5.76C4.169 6 3.197 7.05 3.197 8.688v7.015c0 1.636.972 2.688 2.562 2.688h5.726c1.586 0 2.562-1.054 2.562-2.688v-.686-6.329c0-1.636-.973-2.688-2.562-2.688zM18.4 8.57l-.062.02-2.921 1.306v4.596l2.921 1.307c.165.073.343-.036.38-.215l.008-.07V8.876c0-.195-.16-.334-.326-.305z" />
@@ -413,7 +461,7 @@ export function ComposerCard({
         </div>
         <div className="_feed_inner_text_area_item">
           <div className="_feed_inner_text_area_bottom_event _feed_common">
-            <button type="button" className="_feed_inner_text_area_bottom_photo_link" onClick={onImagePick}>
+            <button type="button" className="_feed_inner_text_area_bottom_photo_link" onClick={() => setActiveAction("event")}>
               <span className="_feed_inner_text_area_bottom_photo_iamge _mar_img">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="24" fill="none" viewBox="0 0 22 24">
                   <path fill="#666" d="M14.371 2c.32 0 .585.262.627.603l.005.095v.788c2.598.195 4.188 2.033 4.18 5v8.488c0 3.145-1.786 5.026-4.656 5.026H7.395C4.53 22 2.74 20.087 2.74 16.904V8.486c0-2.966 1.596-4.804 4.187-5v-.788c0-.386.283-.698.633-.698.32 0 .584.262.626.603l.006.095v.771h5.546v-.771c0-.386.284-.698.633-.698zm3.546 8.283H4.004l.001 6.621c0 2.325 1.137 3.616 3.183 3.697l.207.004h7.132c2.184 0 3.39-1.271 3.39-3.63v-6.692zm-3.202 5.853c.349 0 .632.312.632.698 0 .353-.238.645-.546.691l-.086.006c-.357 0-.64-.312-.64-.697 0-.354.237-.645.546-.692l.094-.006zm-3.742 0c.35 0 .632.312.632.698 0 .353-.238.645-.546.691l-.086.006c-.357 0-.64-.312-.64-.697 0-.354.238-.645.546-.692l.094-.006zm-3.75 0c.35 0 .633.312.633.698 0 .353-.238.645-.547.691l-.093.006c-.35 0-.633-.312-.633-.697 0-.354.238-.645.547-.692l.094-.006zm7.492-3.615c.349 0 .632.312.632.697 0 .354-.238.645-.546.692l-.086.006c-.357 0-.64-.312-.64-.698 0-.353.237-.645.546-.691l.094-.006zm-3.742 0c.35 0 .632.312.632.697 0 .354-.238.645-.546.692l-.086.006c-.357 0-.64-.312-.64-.698 0-.353.238-.645.546-.691l.094-.006zm-3.75 0c.35 0 .633.312.633.697 0 .354-.238.645-.547.692l-.093.006c-.35 0-.633-.312-.633-.698 0-.353.238-.645.547-.691l.094-.006zm6.515-7.657H8.192v.895c0 .385-.283.698-.633.698-.32 0-.584-.263-.626-.603l-.006-.095v-.874c-1.886.173-2.922 1.422-2.922 3.6v.402h13.912v-.403c.007-2.181-1.024-3.427-2.914-3.599v.874c0 .385-.283.698-.632.698-.32 0-.585-.263-.627-.603l-.005-.095v-.895z" />
@@ -452,54 +500,75 @@ export function ComposerCard({
   );
 }
 
-function CommentItem({ comment, currentUser }) {
+function CommentItem({
+  comment,
+  currentUser,
+  token,
+  onUnauthorized,
+  onCommentReaction,
+  onReplyCreated,
+  isReply = false
+}) {
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyValue, setReplyValue] = useState("");
-  const [replies, setReplies] = useState(comment.replies || []);
-  const [likes, setLikes] = useState(comment.likes || []);
-  const [commentLiked, setCommentLiked] = useState(() => (comment.likes || []).some((entry) => entry.id === buildCurrentUserLike(currentUser).id));
+  const [likePending, setLikePending] = useState(false);
+  const [replyPending, setReplyPending] = useState(false);
 
+  const likes = comment.likes || [];
+  const commentLiked = Boolean(comment.likedByMe);
+  const likeCount = typeof comment.likeCount === "number" ? comment.likeCount : likes.length;
   const likedBy = useMemo(() => likes.map((item) => item.name).filter(Boolean), [likes]);
+  const avatarSize = isReply ? 32 : 40;
 
-  function handleLikeComment() {
-    const me = buildCurrentUserLike(currentUser);
-    setCommentLiked((current) => !current);
-    setLikes((current) => {
-      if (current.some((entry) => entry.id === me.id)) {
-        return current.filter((entry) => entry.id !== me.id);
-      }
-
-      return [...current, me];
-    });
-
-  }
-
-  function handleSubmitReply(event) {
-    event.preventDefault();
-    if (!replyValue.trim()) {
+  async function handleLikeComment() {
+    if (likePending || !isPersistedEntityId(comment.id)) {
       return;
     }
+    setLikePending(true);
+    try {
+      const summary = commentLiked
+        ? await unlikeReaction(token, REACTION_TARGET.COMMENT, Number(comment.id))
+        : await likeReaction(token, REACTION_TARGET.COMMENT, Number(comment.id));
+      onCommentReaction(Number(comment.id), summary);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized();
+      }
+    } finally {
+      setLikePending(false);
+    }
+  }
 
-    const nextReply = {
-      id: `${comment.id}-reply-${Date.now()}`,
-      authorName: currentUser?.name || "User",
-      authorEmail: currentUser?.email || "",
-      authorAvatar: currentUser?.avatar || "/assets/images/profile.png",
-      content: replyValue.trim(),
-      createdAt: new Date().toISOString(),
-      likes: []
-    };
-
-    setReplies((current) => [...current, nextReply]);
-    setReplyValue("");
-    setReplyOpen(false);
+  async function handleSubmitReply(event) {
+    event.preventDefault();
+    if (!replyValue.trim() || replyPending || !isPersistedEntityId(comment.id)) {
+      return;
+    }
+    setReplyPending(true);
+    try {
+      const created = await createReply(token, Number(comment.id), replyValue.trim());
+      onReplyCreated(Number(comment.id), created);
+      setReplyValue("");
+      setReplyOpen(false);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized();
+      }
+    } finally {
+      setReplyPending(false);
+    }
   }
 
   return (
-    <div className="_comment_main comment-thread">
+    <div className={`_comment_main comment-thread ${isReply ? "comment-thread-nested" : ""}`.trim()}>
       <div className="_comment_image">
         <span className="_comment_image_link">
-          <Avatar src={comment.authorAvatar || "/assets/images/comment_img.png"} alt={comment.authorName} size={40} className="_comment_img1" />
+          <Avatar
+            src={comment.authorAvatar || "/assets/images/comment_img.png"}
+            alt={comment.authorName}
+            size={avatarSize}
+            className={isReply ? "comment-reply-avatar _comment_img1" : "_comment_img1"}
+          />
         </span>
       </div>
       <div className="_comment_area">
@@ -507,7 +576,6 @@ function CommentItem({ comment, currentUser }) {
           <div className="_comment_details_top">
             <div className="_comment_name">
               <h4 className="_comment_name_title">{comment.authorName}</h4>
-              {comment.authorEmail ? <p className="_comment_status_text">{comment.authorEmail}</p> : null}
             </div>
           </div>
           <div className="_comment_status">
@@ -515,32 +583,19 @@ function CommentItem({ comment, currentUser }) {
               <span>{comment.content}</span>
             </p>
           </div>
-          <div className="_total_reactions">
-            <div className="_total_react">
-              <span className={`_reaction_like ${commentLiked ? "is-active" : ""}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-thumbs-up">
-                  <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                </svg>
-              </span>
-              <span className="_reaction_heart">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-heart">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              </span>
-            </div>
-            <span className="_total">{likes.length}</span>
-          </div>
           {likedBy.length ? <p className="comment-like-summary">Liked by {likedBy.join(", ")}</p> : null}
           <div className="_comment_reply">
             <div className="_comment_reply_num">
               <ul className="_comment_reply_list">
                 <li>
-                  <button type="button" onClick={handleLikeComment}>
-                    {commentLiked ? "Unlike" : "Like"}.
+                  <button type="button" onClick={handleLikeComment} disabled={likePending || !isPersistedEntityId(comment.id)}>
+                    {commentLiked ? "Unlike" : "Like"}
+                    {likeCount > 0 ? ` (${likeCount})` : ""}
+                    {likePending ? "…" : ""}.
                   </button>
                 </li>
                 <li>
-                  <button type="button" onClick={() => setReplyOpen((current) => !current)}>
+                  <button type="button" onClick={() => setReplyOpen((current) => !current)} disabled={!isPersistedEntityId(comment.id)}>
                     Reply.
                   </button>
                 </li>
@@ -568,26 +623,26 @@ function CommentItem({ comment, currentUser }) {
               <button type="button" className="comment-cancel-button" onClick={() => setReplyOpen(false)}>
                 Cancel
               </button>
-              <button type="submit" className="comment-submit-button">
-                Reply
+              <button type="submit" className="comment-submit-button" disabled={replyPending}>
+                {replyPending ? "Sending…" : "Reply"}
               </button>
             </div>
           </form>
         ) : null}
 
-        {replies.length ? (
+        {comment.replies?.length ? (
           <div className="comment-replies">
-            {replies.map((reply) => (
-              <div key={reply.id} className="comment-reply-item">
-                <Avatar src={reply.authorAvatar || "/assets/images/comment_img.png"} alt={reply.authorName} size={32} className="comment-reply-avatar" />
-                <div className="comment-reply-content">
-                  <div className="comment-reply-meta">
-                    <strong>{reply.authorName}</strong>
-                    <span>{formatTimeAgo(reply.createdAt)}</span>
-                  </div>
-                  <p>{reply.content}</p>
-                </div>
-              </div>
+            {comment.replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                currentUser={currentUser}
+                token={token}
+                onUnauthorized={onUnauthorized}
+                onCommentReaction={onCommentReaction}
+                onReplyCreated={onReplyCreated}
+                isReply
+              />
             ))}
           </div>
         ) : null}
@@ -596,46 +651,83 @@ function CommentItem({ comment, currentUser }) {
   );
 }
 
-export function PostCard({ post, currentUser }) {
+export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthorized }) {
   const [likes, setLikes] = useState(post.likes || []);
-  const [liked, setLiked] = useState(() => likes.some((entry) => entry.id === buildCurrentUserLike(currentUser).id) || Boolean(post.liked));
+  const [liked, setLiked] = useState(() => Boolean(post.likedByMe ?? post.liked ?? likes.some((entry) => entry.id === buildCurrentUserLike(currentUser).id)));
   const [comments, setComments] = useState(post.comments || []);
   const [commentValue, setCommentValue] = useState("");
   const [imageExpanded, setImageExpanded] = useState(Boolean(post.imageUrl));
+  const [postLikePending, setPostLikePending] = useState(false);
+  const [commentSubmitPending, setCommentSubmitPending] = useState(false);
+
+  useEffect(() => {
+    setLikes(post.likes || []);
+    setLiked(Boolean(post.likedByMe ?? post.liked));
+    setComments(post.comments || []);
+  }, [post]);
 
   const likedBy = useMemo(() => likes.map((entry) => entry.name).filter(Boolean), [likes]);
+  const likeTotal = typeof post.likeCount === "number" ? post.likeCount : likes.length;
 
-  function togglePostLike() {
-    const me = buildCurrentUserLike(currentUser);
-    setLiked((current) => !current);
-    setLikes((current) => {
-      if (current.some((entry) => entry.id === me.id)) {
-        return current.filter((entry) => entry.id !== me.id);
-      }
-
-      return [...current, me];
+  function handleCommentReaction(commentId, summary) {
+    setComments((prev) => {
+      const next = updateCommentInTree(prev, commentId, (c) => mergeCommentWithReactionSummary(c, summary));
+      onPostUpdated({ ...post, comments: next });
+      return next;
     });
   }
 
-  function handleCommentSubmit(event) {
-    event.preventDefault();
-    if (!commentValue.trim()) {
+  function handleReplyCreated(parentId, reply) {
+    setComments((prev) => {
+      const next = addReplyToThread(prev, parentId, reply);
+      onPostUpdated({ ...post, comments: next });
+      return next;
+    });
+  }
+
+  async function togglePostLike() {
+    if (postLikePending || !isPersistedEntityId(post.id)) {
       return;
     }
+    setPostLikePending(true);
+    try {
+      const summary = liked
+        ? await unlikeReaction(token, REACTION_TARGET.POST, Number(post.id))
+        : await likeReaction(token, REACTION_TARGET.POST, Number(post.id));
+      const merged = mergePostWithReactionSummary({ ...post, comments }, summary);
+      setLikes(merged.likes);
+      setLiked(merged.likedByMe);
+      onPostUpdated(merged);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized();
+      }
+    } finally {
+      setPostLikePending(false);
+    }
+  }
 
-    const nextComment = {
-      id: `${post.id}-comment-${Date.now()}`,
-      authorName: currentUser?.name || "User",
-      authorEmail: currentUser?.email || "",
-      authorAvatar: currentUser?.avatar || "/assets/images/profile.png",
-      content: commentValue.trim(),
-      createdAt: new Date().toISOString(),
-      likes: [],
-      replies: []
-    };
-
-    setComments((current) => [nextComment, ...current]);
-    setCommentValue("");
+  async function handleCommentSubmit(event) {
+    event.preventDefault();
+    if (!commentValue.trim() || commentSubmitPending || !isPersistedEntityId(post.id)) {
+      return;
+    }
+    setCommentSubmitPending(true);
+    try {
+      const created = await createComment(token, Number(post.id), commentValue.trim());
+      setComments((prev) => {
+        const next = [created, ...prev];
+        onPostUpdated({ ...post, comments: next });
+        return next;
+      });
+      setCommentValue("");
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized();
+      }
+    } finally {
+      setCommentSubmitPending(false);
+    }
   }
 
   return (
@@ -683,7 +775,7 @@ export function PostCard({ post, currentUser }) {
           <img src="/assets/images/react_img3.png" alt="Reaction" className="_react_img _rect_img_mbl_none" />
           <img src="/assets/images/react_img4.png" alt="Reaction" className="_react_img _rect_img_mbl_none" />
           <img src="/assets/images/react_img5.png" alt="Reaction" className="_react_img _rect_img_mbl_none" />
-          <p className="_feed_inner_timeline_total_reacts_para">{likes.length ? `${likes.length}+` : "0"}</p>
+          <p className="_feed_inner_timeline_total_reacts_para">{likeTotal ? `${likeTotal}+` : "0"}</p>
         </div>
         <div className="_feed_inner_timeline_total_reacts_txt">
           <p className="_feed_inner_timeline_total_reacts_para1">
@@ -696,9 +788,17 @@ export function PostCard({ post, currentUser }) {
       </div>
 
       <div className="_feed_inner_timeline_reaction">
-        <IconButton className="_feed_inner_timeline_reaction_emoji _feed_reaction" active={liked} onClick={togglePostLike} title="Like post">
+        <IconButton
+          className="_feed_inner_timeline_reaction_emoji _feed_reaction"
+          active={liked}
+          onClick={togglePostLike}
+          title="Like post"
+          disabled={postLikePending || !isPersistedEntityId(post.id)}
+        >
           <span className="_feed_inner_timeline_reaction_link">
-            <span>👍 {liked ? "Unlike" : "Like"}</span>
+            <span>
+              👍 {postLikePending ? "…" : liked ? "Unlike" : "Like"}
+            </span>
           </span>
         </IconButton>
         <IconButton className="_feed_inner_timeline_reaction_comment _feed_reaction" onClick={() => setComments((current) => [...current])} title="Comment">
@@ -718,7 +818,7 @@ export function PostCard({ post, currentUser }) {
           <form className="_feed_inner_comment_box_form" onSubmit={handleCommentSubmit}>
             <div className="_feed_inner_comment_box_content">
               <div className="_feed_inner_comment_box_content_image">
-                <img src={currentUser?.avatar || "/assets/images/profile.png"} alt={currentUser?.name || "Your avatar"} className="_comment_img" />
+                <img src={currentUser?.avatar || "/assets/images/profile-avater.png"} alt={currentUser?.name || "Your avatar"} className="_comment_img" />
               </div>
               <div className="_feed_inner_comment_box_content_txt">
                 <textarea
@@ -737,8 +837,13 @@ export function PostCard({ post, currentUser }) {
               <button type="button" className="_feed_inner_comment_box_icon_btn" aria-label="Attach image">
                 🖼
               </button>
-                <button type="submit" className="_feed_inner_comment_box_icon_btn feed-comment-submit-btn" aria-label="Post comment">
-                  Post
+                <button
+                  type="submit"
+                  className="_feed_inner_comment_box_icon_btn feed-comment-submit-btn"
+                  aria-label="Post comment"
+                  disabled={commentSubmitPending || !isPersistedEntityId(post.id)}
+                >
+                  {commentSubmitPending ? "…" : "Post"}
                 </button>
             </div>
           </form>
@@ -756,7 +861,15 @@ export function PostCard({ post, currentUser }) {
           </div>
         ) : null}
         {comments.map((comment) => (
-          <CommentItem key={comment.id} comment={comment} currentUser={currentUser} />
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            currentUser={currentUser}
+            token={token}
+            onUnauthorized={onUnauthorized}
+            onCommentReaction={handleCommentReaction}
+            onReplyCreated={handleReplyCreated}
+          />
         ))}
       </div>
     </div>

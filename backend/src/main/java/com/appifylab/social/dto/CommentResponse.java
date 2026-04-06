@@ -9,6 +9,7 @@ public record CommentResponse(
         String content,
         String authorName,
         String authorEmail,
+        String authorAvatar,
         OffsetDateTime createdAt,
         ReactionSummaryResponse reactions,
         List<CommentResponse> replies

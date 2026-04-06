@@ -2,7 +2,17 @@ import { createContext, useContext, useMemo, useState } from "react";
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = "appifylab_social_auth";
-const EMPTY_AUTH = { token: "", fullName: "", email: "" };
+const DEFAULT_PROFILE_PHOTO_URL = "/assets/images/profile-avater.png";
+const EMPTY_AUTH = { token: "", fullName: "", email: "", profilePhotoUrl: DEFAULT_PROFILE_PHOTO_URL };
+
+function normalizeAuthState(source) {
+  const merged = { ...EMPTY_AUTH, ...source };
+  const profilePhotoUrl = typeof merged.profilePhotoUrl === "string" ? merged.profilePhotoUrl.trim() : "";
+  return {
+    ...merged,
+    profilePhotoUrl: profilePhotoUrl || DEFAULT_PROFILE_PHOTO_URL
+  };
+}
 
 function readStorage() {
   if (typeof window === "undefined") {
@@ -15,7 +25,7 @@ function readStorage() {
   }
 
   try {
-    return JSON.parse(raw);
+    return normalizeAuthState(JSON.parse(raw));
   } catch {
     return EMPTY_AUTH;
   }
@@ -45,13 +55,13 @@ export function AuthProvider({ children }) {
       ...auth,
       isAuthenticated: Boolean(auth.token),
       login: (nextAuth) => {
-        const normalized = { ...EMPTY_AUTH, ...nextAuth };
+        const normalized = normalizeAuthState(nextAuth);
         setAuth(normalized);
         writeStorage(normalized);
       },
       updateAuth: (patch) => {
         setAuth((current) => {
-          const normalized = { ...current, ...patch };
+          const normalized = normalizeAuthState({ ...current, ...patch });
           writeStorage(normalized);
           return normalized;
         });

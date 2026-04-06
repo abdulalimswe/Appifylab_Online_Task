@@ -142,14 +142,6 @@ main {
   max-height: none;
 }
 
-.auth-google-btn {
-  width: auto;
-}
-
-.auth-google-btn ._google_img {
-  width: auto;
-  height: auto;
-}
 
 .auth-form {
   display: block;

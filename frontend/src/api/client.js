@@ -1,6 +1,18 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+/** Empty = same-origin `/api/...` (use Vite dev proxy to backend). Set VITE_API_BASE_URL for a full backend URL. */
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const MAX_POST_IMAGE_BYTES = 10 * 1024 * 1024;
 const POST_IMAGE_UPLOAD_PATH = import.meta.env.VITE_POST_IMAGE_UPLOAD_PATH || "/api/posts/upload-image";
 const POST_IMAGE_UPLOAD_FIELD = import.meta.env.VITE_POST_IMAGE_UPLOAD_FIELD || "image";
+const DEFAULT_PROFILE_AVATAR = "/assets/images/profile-avater.png";
+const DEFAULT_POST_AUTHOR_AVATAR = "/assets/images/post_img.png";
+const DEFAULT_COMMENT_AUTHOR_AVATAR = "/assets/images/comment_img.png";
+
+export class UnauthorizedError extends Error {
+  constructor(message = "Session expired. Please log in again") {
+    super(message);
+    this.name = "UnauthorizedError";
+  }
+}
 
 async function parseBody(response) {
   const contentType = response.headers.get("content-type") || "";
@@ -21,11 +33,37 @@ async function parseBody(response) {
   }
 }
 
+function formatValidationDetails(details) {
+  if (!details || typeof details !== "object") {
+    return "";
+  }
+  return Object.entries(details)
+    .map(([field, msg]) => `${field}: ${msg}`)
+    .join(". ");
+}
+
 async function handleResponse(response) {
   const data = await parseBody(response);
 
   if (!response.ok) {
-    throw new Error(data.message || data.error || "Request failed");
+    if (response.status === 401) {
+      throw new UnauthorizedError();
+    }
+
+    if (response.status === 403) {
+      throw new Error("You are not allowed to perform this action");
+    }
+
+    if (response.status === 413) {
+      throw new Error(data.message || "Image file is too large. Try a file under 10 MB.");
+    }
+
+    if (response.status >= 500) {
+      throw new Error(data.message || "Server error. Please try again");
+    }
+
+    const validation = formatValidationDetails(data.details);
+    throw new Error(validation || data.message || data.error || "Request failed");
   }
 
   return data;
@@ -52,50 +90,126 @@ function requestMultipart(path, formData, options = {}) {
 }
 
 function extractUploadedImageUrl(payload) {
-  if (!payload || typeof payload !== "object") {
+  if (payload == null) {
+    return "";
+  }
+  if (typeof payload === "string") {
+    return payload.trim();
+  }
+  if (typeof payload !== "object") {
     return "";
   }
 
-  return payload.imageUrl || payload.url || payload.secureUrl || payload.secure_url || "";
+  const nested = payload.data && typeof payload.data === "object" ? payload.data : null;
+  const raw =
+    payload.imageUrl ||
+    payload.url ||
+    payload.secureUrl ||
+    payload.secure_url ||
+    (nested && (nested.secure_url || nested.secureUrl || nested.url)) ||
+    "";
+
+  return typeof raw === "string" ? raw.trim() : "";
+}
+
+export const REACTION_TARGET = {
+  POST: "POST",
+  COMMENT: "COMMENT"
+};
+
+function mapLikersToLikes(likedBy) {
+  if (!Array.isArray(likedBy)) {
+    return [];
+  }
+  return likedBy.map((user, likerIndex) => ({
+    id: `${user.email ?? user.fullName ?? likerIndex}`,
+    name: user.fullName ?? user.email ?? "User",
+    email: user.email ?? "",
+    avatar: normalizeOptionalString(user.avatar, DEFAULT_PROFILE_AVATAR)
+  }));
+}
+
+function normalizeOptionalString(value, fallback = "") {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  return trimmed || fallback;
+}
+
+/** Merge API reaction summary into a normalized post for UI state. */
+export function mergePostWithReactionSummary(post, summary) {
+  const likes = mapLikersToLikes(summary.likedBy);
+  return {
+    ...post,
+    likeCount: summary.totalLikes,
+    likedByMe: summary.likedByMe,
+    liked: summary.likedByMe,
+    likes,
+    reactions: {
+      totalLikes: summary.totalLikes,
+      likedByMe: summary.likedByMe,
+      likedBy: summary.likedBy ?? []
+    }
+  };
+}
+
+/** Merge API reaction summary into a normalized comment (and nested shape). */
+export function mergeCommentWithReactionSummary(comment, summary) {
+  const likes = mapLikersToLikes(summary.likedBy);
+  return {
+    ...comment,
+    likeCount: summary.totalLikes,
+    likedByMe: summary.likedByMe,
+    likes,
+    reactions: {
+      totalLikes: summary.totalLikes,
+      likedByMe: summary.likedByMe,
+      likedBy: summary.likedBy ?? []
+    }
+  };
 }
 
 export function normalizePost(post, index = 0) {
   const likedBy = Array.isArray(post.reactions?.likedBy)
-    ? post.reactions.likedBy.map((user, likerIndex) => ({
-        id: `${user.email ?? user.fullName ?? likerIndex}`,
-        name: user.fullName ?? user.email ?? "User",
-        email: user.email ?? "",
-        avatar: user.avatar ?? "/assets/images/profile.png"
-      }))
+    ? mapLikersToLikes(post.reactions.likedBy)
     : [];
 
   const normalizedComments = Array.isArray(post.comments)
     ? post.comments.map((comment, commentIndex) => normalizeComment(comment, commentIndex))
     : [];
 
+  const totalLikes =
+    typeof post.reactions?.totalLikes === "number"
+      ? post.reactions.totalLikes
+      : typeof post.likeCount === "number"
+        ? post.likeCount
+        : Array.isArray(post.likes)
+          ? post.likes.length
+          : likedBy.length;
+
+  const likedByMe = Boolean(post.reactions?.likedByMe ?? post.likedByMe ?? post.liked);
+
   return {
     id: post.id ?? post.postId ?? `${post.createdAt ?? index}-${index}`,
     content: post.content ?? post.message ?? post.text ?? "",
     createdAt: post.createdAt ?? post.created_at ?? new Date().toISOString(),
     visibility: post.visibility ?? post.postVisibility ?? "Public",
-    imageUrl: post.imageUrl ?? post.image ?? post.mediaUrl ?? post.photoUrl ?? "",
+    imageUrl: normalizeOptionalString(post.imageUrl ?? post.image ?? post.mediaUrl ?? post.photoUrl ?? "", ""),
     authorName: post.authorName ?? post.fullName ?? post.author?.fullName ?? post.author?.name ?? "Community member",
     authorEmail: post.authorEmail ?? post.email ?? post.author?.email ?? "",
-    authorAvatar: post.authorAvatar ?? post.avatarUrl ?? post.avatar ?? "/assets/images/post_img.png",
+    authorAvatar: normalizeOptionalString(post.authorAvatar ?? post.avatarUrl ?? post.avatar, DEFAULT_POST_AUTHOR_AVATAR),
     likes: Array.isArray(post.likes) ? post.likes : likedBy,
-    likeCount:
-      typeof post.likeCount === "number"
-        ? post.likeCount
-        : typeof post.reactions?.totalLikes === "number"
-          ? post.reactions.totalLikes
-          : Array.isArray(post.likes)
-            ? post.likes.length
-            : likedBy.length,
-    comments: normalizedComments
+    likeCount: totalLikes,
+    likedByMe,
+    liked: likedByMe,
+    comments: normalizedComments,
+    reactions: post.reactions
   };
 }
 
-function normalizeComment(comment, index = 0) {
+export function normalizeComment(comment, index = 0) {
   const replies = Array.isArray(comment.replies)
     ? comment.replies.map((reply, replyIndex) => normalizeComment(reply, replyIndex))
     : [];
@@ -105,25 +219,29 @@ function normalizeComment(comment, index = 0) {
         id: item.id ?? `${item.email ?? item.name ?? likeIndex}`,
         name: item.name ?? item.fullName ?? item.email ?? "User",
         email: item.email ?? "",
-        avatar: item.avatar ?? "/assets/images/profile.png"
+        avatar: normalizeOptionalString(item.avatar, DEFAULT_PROFILE_AVATAR)
       }))
     : Array.isArray(comment.reactions?.likedBy)
-      ? comment.reactions.likedBy.map((user, likerIndex) => ({
-          id: `${user.email ?? user.fullName ?? likerIndex}`,
-          name: user.fullName ?? user.email ?? "User",
-          email: user.email ?? "",
-          avatar: user.avatar ?? "/assets/images/profile.png"
-        }))
+      ? mapLikersToLikes(comment.reactions.likedBy)
       : [];
+
+  const likeCount =
+    typeof comment.reactions?.totalLikes === "number"
+      ? comment.reactions.totalLikes
+      : likes.length;
+
+  const likedByMe = Boolean(comment.reactions?.likedByMe);
 
   return {
     id: comment.id ?? `comment-${index}`,
     content: comment.content ?? "",
     authorName: comment.authorName ?? comment.author?.fullName ?? "Community member",
     authorEmail: comment.authorEmail ?? comment.author?.email ?? "",
-    authorAvatar: comment.authorAvatar ?? "/assets/images/comment_img.png",
+    authorAvatar: normalizeOptionalString(comment.authorAvatar, DEFAULT_COMMENT_AUTHOR_AVATAR),
     createdAt: comment.createdAt ?? new Date().toISOString(),
     likes,
+    likeCount,
+    likedByMe,
     replies
   };
 }
@@ -160,18 +278,33 @@ export async function fetchPosts(token) {
 }
 
 export async function createPost(token, payload) {
+  const body = {
+    content: payload.content,
+    visibility: payload.visibility
+  };
+  if (payload.imageUrl) {
+    body.imageUrl = payload.imageUrl;
+  }
+
   const response = await requestJson("/api/posts", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(body)
   });
 
   return normalizePost(await handleResponse(response));
 }
 
 export async function uploadPostImage(token, file) {
+  if (!file || file.size === 0) {
+    throw new Error("Please choose a non-empty image file");
+  }
+  if (file.size > MAX_POST_IMAGE_BYTES) {
+    throw new Error("Image is too large (max 10 MB). Try a smaller file.");
+  }
+
   const formData = new FormData();
-  formData.append(POST_IMAGE_UPLOAD_FIELD, file);
+  formData.append(POST_IMAGE_UPLOAD_FIELD, file, file.name || "upload");
 
   const response = await requestMultipart(POST_IMAGE_UPLOAD_PATH, formData, {
     method: "POST",
@@ -185,5 +318,45 @@ export async function uploadPostImage(token, file) {
   }
 
   return imageUrl;
+}
+
+export async function createComment(token, postId, content) {
+  const response = await requestJson(`/api/posts/${postId}/comments`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ content })
+  });
+
+  return normalizeComment(await handleResponse(response));
+}
+
+export async function createReply(token, commentId, content) {
+  const response = await requestJson(`/api/posts/comments/${commentId}/replies`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ content })
+  });
+
+  return normalizeComment(await handleResponse(response));
+}
+
+export async function likeReaction(token, targetType, targetId) {
+  const response = await requestJson("/api/posts/reactions/like", {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ targetType, targetId })
+  });
+
+  return handleResponse(response);
+}
+
+export async function unlikeReaction(token, targetType, targetId) {
+  const response = await requestJson("/api/posts/reactions/like", {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ targetType, targetId })
+  });
+
+  return handleResponse(response);
 }
 
