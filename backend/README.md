@@ -223,6 +223,55 @@ From `backend/`:
 mvn test
 ```
 
+## Deploy Backend to Render (Docker)
+
+This repository now includes:
+
+- `backend/Dockerfile`
+- `backend/.dockerignore`
+
+### 1) Push code to GitHub
+
+```bash
+cd /Users/utin/IdeaProjects/Appifylab_Online_Task
+git add backend/Dockerfile backend/.dockerignore backend/src/main/resources/application.yml backend/README.md
+git commit -m "Add Docker setup for Render backend deployment"
+git push origin main
+```
+
+### 2) Create Render Web Service (from GitHub)
+
+- Render Dashboard -> **New** -> **Web Service**
+- Select your GitHub repository
+- Configure:
+  - **Runtime**: Docker
+  - **Root Directory**: `backend`
+  - **Dockerfile Path**: `./backend/Dockerfile`
+
+### 3) Set environment variables in Render
+
+- `DB_URL` = `jdbc:postgresql://<host>:5432/<database>`
+- `DB_USERNAME` = `<db-username>`
+- `DB_PASSWORD` = `<db-password>`
+- `JWT_SECRET` = `<strong base64 secret>`
+- `JWT_EXPIRATION_MS` = `86400000`
+- `CLOUDINARY_CLOUD_NAME` = `<cloudinary cloud name>`
+- `CLOUDINARY_API_KEY` = `<cloudinary api key>`
+- `CLOUDINARY_API_SECRET` = `<cloudinary api secret>`
+- `CLOUDINARY_FOLDER` = `appifylab/posts` (optional)
+
+The backend uses `server.port=${PORT:8080}`, so Render's dynamic `PORT` works automatically.
+
+### 4) Verify deploy
+
+After deploy success:
+
+```bash
+curl -X POST "https://<your-service>.onrender.com/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@example.com","password":"demo123"}'
+```
+
 ## Production Notes
 
 Before deploying:
