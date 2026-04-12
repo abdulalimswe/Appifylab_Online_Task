@@ -14,6 +14,14 @@ This repository contains:
 
 The original static HTML templates (`login.html`, `registration.html`, `feed.html`) and design assets are also kept in the root for reference.
 
+## System Design
+
+High-level architecture diagram for this project:
+
+![System Design](docs/system-design.png)
+
+Source/generator script: `scripts/generate_system_design_png.py`
+
 ## Current Product Scope
 
 - Email/password registration and login
