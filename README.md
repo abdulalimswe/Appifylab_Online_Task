@@ -18,9 +18,8 @@ The original static HTML templates (`login.html`, `registration.html`, `feed.htm
 
 High-level architecture diagram for this project:
 
-![System Design](docs/system-design.png)
+![System Design](assets/system-design.png)
 
-Source/generator script: `scripts/generate_system_design_png.py`
 
 ## Current Product Scope
 
