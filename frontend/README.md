@@ -115,6 +115,7 @@ cp .env.example .env
 - `VITE_API_BASE_URL`
   - Empty/unset: frontend calls relative `/api/...` paths.
   - Full URL set: requests go directly to that backend host.
+  - Production (Vercel): set `VITE_API_BASE_URL=https://appifylab-online-task-1.onrender.com`
 
 - `VITE_POST_IMAGE_UPLOAD_PATH` (optional, advanced)
   - Default: `/api/posts/upload-image`
@@ -129,6 +130,17 @@ cp .env.example .env
 - Multipart image uploads are made through `requestMultipart()`.
 - Backend errors are normalized into user-friendly messages.
 - `401` responses throw `UnauthorizedError` so the UI can force re-login.
+- Network/CORS failures show a direct backend connectivity message for faster troubleshooting.
+
+## Production Setup (Vercel -> Render)
+
+1. In Vercel project settings, add env variable:
+   - `VITE_API_BASE_URL=https://appifylab-online-task-1.onrender.com`
+2. Redeploy frontend in Vercel.
+3. In Render backend service env, set:
+   - `APP_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://appifylab-one.vercel.app`
+4. Redeploy backend in Render.
+5. Verify login/register/feed calls from `https://appifylab-one.vercel.app`.
 
 ## Routing and Auth Flow
 

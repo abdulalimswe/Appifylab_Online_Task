@@ -1,5 +1,6 @@
 /** Empty = same-origin `/api/...` (use Vite dev proxy to backend). Set VITE_API_BASE_URL for a full backend URL. */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const RAW_API_BASE_URL = typeof import.meta.env.VITE_API_BASE_URL === "string" ? import.meta.env.VITE_API_BASE_URL.trim() : "";
+const API_BASE_URL = RAW_API_BASE_URL || (import.meta.env.PROD ? "https://appifylab-online-task-1.onrender.com" : "");
 const MAX_POST_IMAGE_BYTES = 10 * 1024 * 1024;
 const POST_IMAGE_UPLOAD_PATH = import.meta.env.VITE_POST_IMAGE_UPLOAD_PATH || "/api/posts/upload-image";
 const POST_IMAGE_UPLOAD_FIELD = import.meta.env.VITE_POST_IMAGE_UPLOAD_FIELD || "image";
@@ -69,8 +70,24 @@ async function handleResponse(response) {
   return data;
 }
 
+function buildApiUrl(path) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!API_BASE_URL) {
+    return normalizedPath;
+  }
+  return `${API_BASE_URL.replace(/\/+$/, "")}${normalizedPath}`;
+}
+
+async function safeFetch(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch (error) {
+    throw new Error("Network error: unable to reach backend API. Please check backend URL and CORS settings.");
+  }
+}
+
 function requestJson(path, options = {}) {
-  return fetch(`${API_BASE_URL}${path}`, {
+  return safeFetch(buildApiUrl(path), {
     ...options,
     headers: {
       ...(options.headers || {}),
@@ -80,7 +97,7 @@ function requestJson(path, options = {}) {
 }
 
 function requestMultipart(path, formData, options = {}) {
-  return fetch(`${API_BASE_URL}${path}`, {
+  return safeFetch(buildApiUrl(path), {
     ...options,
     body: formData,
     headers: {

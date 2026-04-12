@@ -35,6 +35,7 @@ Create your env values from `backend/.env.example`:
 - `DB_URL`
 - `DB_USERNAME`
 - `DB_PASSWORD`
+- `APP_CORS_ALLOWED_ORIGINS` (comma-separated frontend origins)
 - `JWT_SECRET` (Base64 encoded, strong secret)
 - `JWT_EXPIRATION_MS`
 - `CLOUDINARY_CLOUD_NAME`
@@ -48,6 +49,7 @@ Example (zsh):
 export DB_URL="jdbc:postgresql://localhost:5432/appifylab_social"
 export DB_USERNAME="postgres"
 export DB_PASSWORD="your_password"
+export APP_CORS_ALLOWED_ORIGINS="http://localhost:5173,http://127.0.0.1:5173,https://appifylab-one.vercel.app"
 export JWT_SECRET="your_base64_secret"
 export JWT_EXPIRATION_MS="86400000"
 export CLOUDINARY_CLOUD_NAME="your_cloud_name"
@@ -255,6 +257,7 @@ git push origin main
 - `DB_PASSWORD` = `<db-password>`
 - `JWT_SECRET` = `<strong base64 secret>`
 - `JWT_EXPIRATION_MS` = `86400000`
+- `APP_CORS_ALLOWED_ORIGINS` = `http://localhost:5173,http://127.0.0.1:5173,https://appifylab-one.vercel.app`
 - `CLOUDINARY_CLOUD_NAME` = `<cloudinary cloud name>`
 - `CLOUDINARY_API_KEY` = `<cloudinary api key>`
 - `CLOUDINARY_API_SECRET` = `<cloudinary api secret>`
