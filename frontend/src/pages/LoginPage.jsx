@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { login } from "../api/client";
 import AuthShell from "../components/AuthShell";
@@ -13,6 +13,13 @@ function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const registeredEmail = typeof location.state?.email === "string" ? location.state.email.trim() : "";
+    if (location.state?.registered === true && registeredEmail) {
+      setEmail(registeredEmail);
+    }
+  }, [location.state]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -108,6 +115,9 @@ function LoginPage() {
           </div>
         </div>
 
+        {location.state?.registered === true ? (
+          <p className="auth-inline-success">Account created successfully. Please log in.</p>
+        ) : null}
         {error ? <p className="auth-inline-error">{error}</p> : null}
 
         <div className="row">

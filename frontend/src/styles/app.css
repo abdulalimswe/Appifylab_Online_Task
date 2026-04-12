@@ -184,12 +184,22 @@ main {
   color: #c53030;
 }
 
+.auth-inline-success {
+  margin: 8px 0 12px;
+  color: #2f855a;
+}
+
 .auth-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: auto;
   min-height: auto;
   border-radius: inherit;
   font-weight: inherit;
   box-shadow: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .auth-submit-btn:disabled,
@@ -197,6 +207,21 @@ main {
 ._social_registration_form_btn_link:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.auth-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: auth-btn-spin 0.8s linear infinite;
+}
+
+@keyframes auth-btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .social-feed-shell {

@@ -2,6 +2,7 @@
 const RAW_API_BASE_URL = typeof import.meta.env.VITE_API_BASE_URL === "string" ? import.meta.env.VITE_API_BASE_URL.trim() : "";
 const API_BASE_URL = RAW_API_BASE_URL || (import.meta.env.PROD ? "https://appifylab-online-task-1.onrender.com" : "");
 const MAX_POST_IMAGE_BYTES = 10 * 1024 * 1024;
+const REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS || 25000);
 const POST_IMAGE_UPLOAD_PATH = import.meta.env.VITE_POST_IMAGE_UPLOAD_PATH || "/api/posts/upload-image";
 const POST_IMAGE_UPLOAD_FIELD = import.meta.env.VITE_POST_IMAGE_UPLOAD_FIELD || "image";
 const DEFAULT_PROFILE_AVATAR = "/assets/images/profile-avatar.png";
@@ -83,10 +84,21 @@ function buildApiUrl(path) {
 }
 
 async function safeFetch(url, options) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
-    return await fetch(url, options);
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error("Request timed out. Please try again.");
+    }
     throw new Error("Network error: unable to reach backend API. Please check backend URL and CORS settings.");
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

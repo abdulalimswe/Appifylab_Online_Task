@@ -2,11 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { register } from "../api/client";
 import AuthShell from "../components/AuthShell";
-import { useAuth } from "../context/AuthContext";
 
 function RegistrationPage() {
   const navigate = useNavigate();
-  const auth = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,6 +14,9 @@ function RegistrationPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (loading) {
+      return;
+    }
     setError("");
 
     if (password !== confirmPassword) {
@@ -32,14 +33,15 @@ function RegistrationPage() {
     try {
       const fullNameFromEmail = email.includes("@") ? email.split("@")[0] : email;
       const fullName = fullNameFromEmail.trim().length >= 2 ? fullNameFromEmail.trim() : "New User";
-      const data = await register({ fullName, email: email.trim(), password });
-      auth.login({
-        token: data.token,
-        fullName: data.fullName,
-        email: data.email,
-        profilePhotoUrl: data.profilePhotoUrl
+      const normalizedEmail = email.trim();
+      await register({ fullName, email: normalizedEmail, password });
+      navigate("/login", {
+        replace: true,
+        state: {
+          registered: true,
+          email: normalizedEmail
+        }
       });
-      navigate("/feed", { replace: true });
     } catch (err) {
       setError(err.message || "Registration failed");
     } finally {
@@ -61,7 +63,7 @@ function RegistrationPage() {
       footerLinkTo="/login"
     >
 
-      <form className="_social_registration_form" onSubmit={handleSubmit}>
+      <form className="_social_registration_form" onSubmit={handleSubmit} aria-busy={loading}>
         <div className="row">
           <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
             <div className="_social_registration_form_input _mar_b14">
@@ -75,6 +77,7 @@ function RegistrationPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                disabled={loading}
                 required
               />
             </div>
@@ -92,6 +95,7 @@ function RegistrationPage() {
                 minLength={6}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                disabled={loading}
                 required
               />
             </div>
@@ -109,6 +113,7 @@ function RegistrationPage() {
                 minLength={6}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
+                disabled={loading}
                 required
               />
             </div>
@@ -124,6 +129,7 @@ function RegistrationPage() {
                 name="terms"
                 checked={termsAccepted}
                 onChange={() => setTermsAccepted(true)}
+                disabled={loading}
               />
               <span className="form-check-label _social_registration_form_check_label">I agree to terms &amp; conditions</span>
             </label>
@@ -135,8 +141,20 @@ function RegistrationPage() {
         <div className="row">
           <div className="col-lg-12 col-md-12 col-xl-12 col-sm-12">
             <div className="_social_registration_form_btn _mar_t40 _mar_b60">
-              <button type="submit" className="_social_registration_form_btn_link _btn1 auth-submit-btn" disabled={loading}>
-                {loading ? "Creating account..." : "Sign Up"}
+              <button
+                type="submit"
+                className="_social_registration_form_btn_link _btn1 auth-submit-btn"
+                disabled={loading}
+                aria-busy={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="auth-btn-spinner" aria-hidden="true" />
+                    Creating account...
+                  </>
+                ) : (
+                  "Sign Up"
+                )}
               </button>
             </div>
           </div>
