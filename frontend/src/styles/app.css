@@ -629,6 +629,16 @@ main {
   margin: 10px 0 0;
 }
 
+.feed-inline-toggle {
+  color: #377dff;
+  font-weight: 600;
+}
+
+.comment-replies {
+  border-left: 2px solid rgba(55, 125, 255, 0.18);
+  padding-left: 10px;
+}
+
 .feed-column-panel {
   border-radius: 22px;
   padding: 20px;

@@ -53,6 +53,13 @@ function buildCurrentUserLike(currentUser) {
   };
 }
 
+const COMMENTS_PREVIEW_COUNT = 2;
+
+function makeListKey(prefix, item, index) {
+  const keySource = item?.id ?? item?.createdAt ?? item?.authorEmail ?? item?.authorName ?? "item";
+  return `${prefix}-${keySource}-${index}`;
+}
+
 function formatTimeAgo(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -510,11 +517,14 @@ function CommentItem({
   isReply = false
 }) {
   const [replyOpen, setReplyOpen] = useState(false);
+  const [repliesOpen, setRepliesOpen] = useState(false);
   const [replyValue, setReplyValue] = useState("");
   const [likePending, setLikePending] = useState(false);
   const [replyPending, setReplyPending] = useState(false);
 
   const likes = comment.likes || [];
+  const replies = comment.replies || [];
+  const hasReplies = replies.length > 0;
   const commentLiked = Boolean(comment.likedByMe);
   const likeCount = typeof comment.likeCount === "number" ? comment.likeCount : likes.length;
   const likedBy = useMemo(() => likes.map((item) => item.name).filter(Boolean), [likes]);
@@ -550,6 +560,7 @@ function CommentItem({
       onReplyCreated(Number(comment.id), created);
       setReplyValue("");
       setReplyOpen(false);
+      setRepliesOpen(true);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized();
@@ -599,6 +610,13 @@ function CommentItem({
                     Reply.
                   </button>
                 </li>
+                {hasReplies ? (
+                  <li>
+                    <button type="button" className="feed-inline-toggle" onClick={() => setRepliesOpen((current) => !current)} aria-expanded={repliesOpen}>
+                      {repliesOpen ? `Hide replies (${replies.length})` : `View replies (${replies.length})`}
+                    </button>
+                  </li>
+                ) : null}
                 <li>
                   <button type="button">Share</button>
                 </li>
@@ -630,11 +648,11 @@ function CommentItem({
           </form>
         ) : null}
 
-        {comment.replies?.length ? (
+        {hasReplies && repliesOpen ? (
           <div className="comment-replies">
-            {comment.replies.map((reply) => (
+            {replies.map((reply, replyIndex) => (
               <CommentItem
-                key={reply.id}
+                key={makeListKey(`reply-${comment.id}`, reply, replyIndex)}
                 comment={reply}
                 currentUser={currentUser}
                 token={token}
@@ -657,6 +675,7 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
   const [comments, setComments] = useState(post.comments || []);
   const [commentValue, setCommentValue] = useState("");
   const [imageExpanded, setImageExpanded] = useState(Boolean(post.imageUrl));
+  const [commentsExpanded, setCommentsExpanded] = useState(false);
   const [postLikePending, setPostLikePending] = useState(false);
   const [commentSubmitPending, setCommentSubmitPending] = useState(false);
 
@@ -668,6 +687,8 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
 
   const likedBy = useMemo(() => likes.map((entry) => entry.name).filter(Boolean), [likes]);
   const likeTotal = typeof post.likeCount === "number" ? post.likeCount : likes.length;
+  const visibleComments = commentsExpanded ? comments : comments.slice(0, COMMENTS_PREVIEW_COUNT);
+  const hiddenCommentsCount = Math.max(0, comments.length - COMMENTS_PREVIEW_COUNT);
 
   function handleCommentReaction(commentId, summary) {
     setComments((prev) => {
@@ -721,6 +742,7 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
         return next;
       });
       setCommentValue("");
+      setCommentsExpanded(true);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized();
@@ -801,7 +823,7 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
             </span>
           </span>
         </IconButton>
-        <IconButton className="_feed_inner_timeline_reaction_comment _feed_reaction" onClick={() => setComments((current) => [...current])} title="Comment">
+        <IconButton className="_feed_inner_timeline_reaction_comment _feed_reaction" onClick={() => setCommentsExpanded(true)} title="Comment">
           <span className="_feed_inner_timeline_reaction_link">
             <span>💬 Comment</span>
           </span>
@@ -855,14 +877,18 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
       <div className="_timline_comment_main">
         {comments.length > 0 ? (
           <div className="_previous_comment">
-            <button type="button" className="_previous_comment_txt">
-              View {comments.length} previous comment{comments.length === 1 ? "" : "s"}
+            <button type="button" className="_previous_comment_txt" onClick={() => setCommentsExpanded((current) => !current)} aria-expanded={commentsExpanded}>
+              {commentsExpanded
+                ? `Show fewer comments`
+                : hiddenCommentsCount > 0
+                  ? `View all ${comments.length} comments`
+                  : `View comment thread (${comments.length})`}
             </button>
           </div>
         ) : null}
-        {comments.map((comment) => (
+        {visibleComments.map((comment, commentIndex) => (
           <CommentItem
-            key={comment.id}
+            key={makeListKey(`comment-${post.id}`, comment, commentIndex)}
             comment={comment}
             currentUser={currentUser}
             token={token}
