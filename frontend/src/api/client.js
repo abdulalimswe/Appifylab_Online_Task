@@ -43,12 +43,16 @@ function formatValidationDetails(details) {
     .join(". ");
 }
 
-async function handleResponse(response) {
+async function handleResponse(response, { requiresAuth = false } = {}) {
   const data = await parseBody(response);
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new UnauthorizedError();
+      if (requiresAuth) {
+        throw new UnauthorizedError();
+      }
+
+      throw new Error(data.message || data.error || "Invalid email or password");
     }
 
     if (response.status === 403) {
@@ -273,7 +277,7 @@ export async function register(payload) {
     body: JSON.stringify(payload)
   });
 
-  return handleResponse(response);
+  return handleResponse(response, { requiresAuth: false });
 }
 
 export async function login(payload) {
@@ -282,7 +286,7 @@ export async function login(payload) {
     body: JSON.stringify(payload)
   });
 
-  return handleResponse(response);
+  return handleResponse(response, { requiresAuth: false });
 }
 
 export async function fetchPosts(token) {
@@ -290,7 +294,7 @@ export async function fetchPosts(token) {
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  const data = await handleResponse(response);
+  const data = await handleResponse(response, { requiresAuth: true });
   return Array.isArray(data) ? data.map(normalizePost) : [];
 }
 
@@ -309,7 +313,7 @@ export async function createPost(token, payload) {
     body: JSON.stringify(body)
   });
 
-  return normalizePost(await handleResponse(response));
+  return normalizePost(await handleResponse(response, { requiresAuth: true }));
 }
 
 export async function uploadPostImage(token, file) {
@@ -328,7 +332,7 @@ export async function uploadPostImage(token, file) {
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  const data = await handleResponse(response);
+  const data = await handleResponse(response, { requiresAuth: true });
   const imageUrl = extractUploadedImageUrl(data);
   if (!imageUrl) {
     throw new Error("Upload succeeded but no image URL was returned");
@@ -344,7 +348,7 @@ export async function createComment(token, postId, content) {
     body: JSON.stringify({ content })
   });
 
-  return normalizeComment(await handleResponse(response));
+  return normalizeComment(await handleResponse(response, { requiresAuth: true }));
 }
 
 export async function createReply(token, commentId, content) {
@@ -354,7 +358,7 @@ export async function createReply(token, commentId, content) {
     body: JSON.stringify({ content })
   });
 
-  return normalizeComment(await handleResponse(response));
+  return normalizeComment(await handleResponse(response, { requiresAuth: true }));
 }
 
 export async function likeReaction(token, targetType, targetId) {
@@ -364,7 +368,7 @@ export async function likeReaction(token, targetType, targetId) {
     body: JSON.stringify({ targetType, targetId })
   });
 
-  return handleResponse(response);
+  return handleResponse(response, { requiresAuth: true });
 }
 
 export async function unlikeReaction(token, targetType, targetId) {
@@ -374,6 +378,6 @@ export async function unlikeReaction(token, targetType, targetId) {
     body: JSON.stringify({ targetType, targetId })
   });
 
-  return handleResponse(response);
+  return handleResponse(response, { requiresAuth: true });
 }
 
