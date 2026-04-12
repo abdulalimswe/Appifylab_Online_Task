@@ -4,7 +4,7 @@ const API_BASE_URL = RAW_API_BASE_URL || (import.meta.env.PROD ? "https://appify
 const MAX_POST_IMAGE_BYTES = 10 * 1024 * 1024;
 const POST_IMAGE_UPLOAD_PATH = import.meta.env.VITE_POST_IMAGE_UPLOAD_PATH || "/api/posts/upload-image";
 const POST_IMAGE_UPLOAD_FIELD = import.meta.env.VITE_POST_IMAGE_UPLOAD_FIELD || "image";
-const DEFAULT_PROFILE_AVATAR = "/assets/images/profile-avater.png";
+const DEFAULT_PROFILE_AVATAR = "/assets/images/profile-avatar.png";
 const DEFAULT_POST_AUTHOR_AVATAR = "/assets/images/post_img.png";
 const DEFAULT_COMMENT_AUTHOR_AVATAR = "/assets/images/comment_img.png";
 

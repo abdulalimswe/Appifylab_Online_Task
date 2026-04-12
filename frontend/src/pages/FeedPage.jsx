@@ -30,7 +30,7 @@ function FeedPage() {
   const imageRef = useRef(null);
   const objectUrlRef = useRef("");
 
-  const profileAvatar = profilePhotoUrl || "/assets/images/profile-avater.png";
+  const profileAvatar = profilePhotoUrl || "/assets/images/profile-avatar.png";
   const currentUser = {
     id: email || fullName || "current-user",
     name: fullName || email || "User",

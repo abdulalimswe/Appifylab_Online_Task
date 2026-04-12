@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = "appifylab_social_auth";
-const DEFAULT_PROFILE_PHOTO_URL = "/assets/images/profile-avater.png";
+const DEFAULT_PROFILE_PHOTO_URL = "/assets/images/profile-avatar.png";
 const EMPTY_AUTH = { token: "", fullName: "", email: "", profilePhotoUrl: DEFAULT_PROFILE_PHOTO_URL };
 
 function normalizeAuthState(source) {

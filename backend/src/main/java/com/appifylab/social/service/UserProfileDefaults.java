@@ -2,7 +2,7 @@ package com.appifylab.social.service;
 
 public final class UserProfileDefaults {
 
-    public static final String DEFAULT_PROFILE_PHOTO_URL = "/assets/images/profile-avater.png";
+    public static final String DEFAULT_PROFILE_PHOTO_URL = "/assets/images/profile-avatar.png";
 
     private UserProfileDefaults() {
     }

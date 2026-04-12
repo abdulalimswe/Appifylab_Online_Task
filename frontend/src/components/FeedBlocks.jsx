@@ -49,7 +49,7 @@ function buildCurrentUserLike(currentUser) {
     id: currentUser?.id || currentUser?.email || "current-user",
     name: currentUser?.name || currentUser?.email || "User",
     email: currentUser?.email || "",
-    avatar: currentUser?.avatar || "/assets/images/profile-avater.png"
+    avatar: currentUser?.avatar || "/assets/images/profile-avatar.png"
   };
 }
 
@@ -162,7 +162,7 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
 
           <div className="_header_nav_profile">
             <div className="_header_nav_profile_image">
-              <img src={avatarSrc || "/assets/images/profile-avater.png"} alt="Profile" className="_nav_profile_img" />
+              <img src={avatarSrc || "/assets/images/profile-avatar.png"} alt="Profile" className="_nav_profile_img" />
             </div>
             <div className="_header_nav_dropdown">
               <div className="_header_nav_name_block">
@@ -185,7 +185,7 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
               <div id="_prfoile_drop" className="_nav_profile_dropdown _profile_dropdown show">
                 <div className="_nav_profile_dropdown_info">
                   <div className="_nav_profile_dropdown_image">
-                    <img src={avatarSrc || "/assets/images/profile-avater.png"} alt="Profile" className="_nav_drop_img" />
+                    <img src={avatarSrc || "/assets/images/profile-avatar.png"} alt="Profile" className="_nav_drop_img" />
                   </div>
                   <div className="_nav_profile_dropdown_info_txt">
                     <h4 className="_nav_dropdown_title">{fullName || "Guest user"}</h4>
@@ -818,7 +818,7 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
           <form className="_feed_inner_comment_box_form" onSubmit={handleCommentSubmit}>
             <div className="_feed_inner_comment_box_content">
               <div className="_feed_inner_comment_box_content_image">
-                <img src={currentUser?.avatar || "/assets/images/profile-avater.png"} alt={currentUser?.name || "Your avatar"} className="_comment_img" />
+                <img src={currentUser?.avatar || "/assets/images/profile-avatar.png"} alt={currentUser?.name || "Your avatar"} className="_comment_img" />
               </div>
               <div className="_feed_inner_comment_box_content_txt">
                 <textarea

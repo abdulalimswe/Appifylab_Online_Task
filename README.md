@@ -159,7 +159,7 @@ Returns token + user fields (including `profilePhotoUrl`).
 
 New users without an explicit profile photo automatically receive:
 
-- `/assets/images/profile-avater.png`
+- `/assets/images/profile-avatar.png`
 
 This default is enforced across:
 

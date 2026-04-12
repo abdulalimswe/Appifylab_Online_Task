@@ -35,7 +35,7 @@ The following screenshots are stored in the root `assets/` folder and document t
 - `Email auth only`: Google sign-in/register section is removed from the client UI.
 - `Route protection`: `/feed` is guarded and redirects unauthenticated users to `/login`.
 - `Session persistence`: auth data is stored in local storage (`appifylab_social_auth`).
-- `Default avatar fallback`: users without a profile photo use `/assets/images/profile-avater.png`.
+- `Default avatar fallback`: users without a profile photo use `/assets/images/profile-avatar.png`.
 - `Graceful unauthorized handling`: API `401` triggers logout + redirect to login.
 
 ## Tech Stack
@@ -157,7 +157,7 @@ Session state is managed in `src/context/AuthContext.jsx`.
 
 Frontend enforces fallback avatars in multiple places:
 
-- Auth context fallback: `/assets/images/profile-avater.png`
+- Auth context fallback: `/assets/images/profile-avatar.png`
 - Feed header/profile UI fallback
 - Like/comment user objects fallback where applicable
 
