@@ -950,6 +950,21 @@ export function RightPeopleList({ people }) {
   );
 }
 
+export function FeedSkeletonList({ count = 3 }) {
+  return (
+    <div className="feed-skeleton-list" aria-hidden="true">
+      {Array.from({ length: count }).map((_, index) => (
+        <article className="feed-skeleton-card" key={`feed-skeleton-${index}`}>
+          <div className="feed-skeleton-line feed-skeleton-line-avatar" />
+          <div className="feed-skeleton-line feed-skeleton-line-title" />
+          <div className="feed-skeleton-line" />
+          <div className="feed-skeleton-line feed-skeleton-line-short" />
+        </article>
+      ))}
+    </div>
+  );
+}
+
 export function FeedColumnTitle({ title, actionLabel, actionHref = "#0" }) {
   return (
     <div className="feed-column-title">

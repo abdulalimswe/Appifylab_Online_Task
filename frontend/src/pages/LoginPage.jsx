@@ -23,6 +23,9 @@ function LoginPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (loading) {
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -36,7 +39,12 @@ function LoginPage() {
         rememberMe
       });
       const nextPath = location.state?.from || "/feed";
-      navigate(nextPath, { replace: true });
+      navigate(nextPath, {
+        replace: true,
+        state: {
+          loginTransition: true
+        }
+      });
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {
@@ -71,6 +79,7 @@ function LoginPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                disabled={loading}
                 required
               />
             </div>
@@ -87,6 +96,7 @@ function LoginPage() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                disabled={loading}
                 required
               />
             </div>
@@ -102,6 +112,7 @@ function LoginPage() {
                 name="rememberMe"
                 checked={rememberMe}
                 onChange={() => setRememberMe(true)}
+                disabled={loading}
               />
               <span className="form-check-label _social_login_form_check_label">Remember me</span>
             </label>
@@ -123,8 +134,15 @@ function LoginPage() {
         <div className="row">
           <div className="col-lg-12 col-md-12 col-xl-12 col-sm-12">
             <div className="_social_login_form_btn _mar_t40 _mar_b60">
-              <button type="submit" className="_social_login_form_btn_link _btn1 auth-submit-btn" disabled={loading}>
-                {loading ? "Logging in..." : "Login now"}
+              <button type="submit" className="_social_login_form_btn_link _btn1 auth-submit-btn" disabled={loading} aria-busy={loading}>
+                {loading ? (
+                  <>
+                    <span className="auth-btn-spinner" aria-hidden="true" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login now"
+                )}
               </button>
             </div>
           </div>

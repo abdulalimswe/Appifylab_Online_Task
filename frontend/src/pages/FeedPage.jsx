@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { UnauthorizedError, createPost, fetchPosts, sortByNewestFirst, uploadPostImage } from "../api/client";
 import {
   ComposerCard,
   EventList,
   FeedHeader,
   PostCard,
+  FeedSkeletonList,
   RightPeopleList,
   SidebarCard,
   StoryRail,
@@ -16,13 +17,15 @@ import { demoPosts, eventCards, exploreItems, rightSidebarPeople, sortSeedPostsN
 
 function FeedPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { token, fullName, email, profilePhotoUrl, logout } = useAuth();
-  const [posts, setPosts] = useState(() => sortSeedPostsNewestFirst(demoPosts));
+  const [posts, setPosts] = useState([]);
   const [composerContent, setComposerContent] = useState("");
   const [composerVisibility, setComposerVisibility] = useState("Public");
   const [composerError, setComposerError] = useState("");
   const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [initialLoadPending, setInitialLoadPending] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [imagePreview, setImagePreview] = useState("");
   const [imageName, setImageName] = useState("");
@@ -67,6 +70,7 @@ function FeedPage() {
       } finally {
         if (active) {
           setLoading(false);
+          setInitialLoadPending(false);
         }
       }
     }
@@ -182,6 +186,9 @@ function FeedPage() {
     setPosts((current) => current.map((p) => (String(p.id) === String(nextPost.id) ? nextPost : p)));
   }
 
+  const showInitialSkeleton = loading && initialLoadPending && posts.length === 0;
+  const showLoginTransition = location.state?.loginTransition === true && showInitialSkeleton;
+
   return (
     <div className="_layout _layout_main_wrapper social-feed-shell">
       <div className="_main_layout">
@@ -240,23 +247,27 @@ function FeedPage() {
                     />
 
                     {loadError ? <div className="feed-banner feed-banner-error">{loadError}</div> : null}
-                    {loading ? <div className="feed-banner">Loading feed...</div> : null}
+                    {showLoginTransition ? <div className="feed-banner">Login successful. Preparing your feed...</div> : null}
 
-                    <div className="feed-post-list">
-                      {posts.map((post) => (
-                        <PostCard
-                          key={post.id}
-                          post={post}
-                          currentUser={currentUser}
-                          token={token}
-                          onPostUpdated={handlePostUpdated}
-                          onUnauthorized={() => {
-                            logout();
-                            navigate("/login", { replace: true });
-                          }}
-                        />
-                      ))}
-                    </div>
+                    {showInitialSkeleton ? (
+                      <FeedSkeletonList count={3} />
+                    ) : (
+                      <div className="feed-post-list">
+                        {posts.map((post) => (
+                          <PostCard
+                            key={post.id}
+                            post={post}
+                            currentUser={currentUser}
+                            token={token}
+                            onPostUpdated={handlePostUpdated}
+                            onUnauthorized={() => {
+                              logout();
+                              navigate("/login", { replace: true });
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
