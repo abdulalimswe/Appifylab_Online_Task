@@ -1,6 +1,6 @@
 /** Empty = same-origin `/api/...` (use Vite dev proxy to backend). Set VITE_API_BASE_URL for a full backend URL. */
 const RAW_API_BASE_URL = typeof import.meta.env.VITE_API_BASE_URL === "string" ? import.meta.env.VITE_API_BASE_URL.trim() : "";
-const API_BASE_URL = RAW_API_BASE_URL || (import.meta.env.PROD ? "https://appifylab-online-task-1.onrender.com" : "");
+const API_BASE_URL = RAW_API_BASE_URL || (import.meta.env.PROD ? "https://striking-cat-production-fed5.up.railway.app" : "");
 const MAX_POST_IMAGE_BYTES = 10 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS || 25000);
 const POST_IMAGE_UPLOAD_PATH = import.meta.env.VITE_POST_IMAGE_UPLOAD_PATH || "/api/posts/upload-image";

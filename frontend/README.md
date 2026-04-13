@@ -115,7 +115,7 @@ cp .env.example .env
 - `VITE_API_BASE_URL`
   - Empty/unset: frontend calls relative `/api/...` paths.
   - Full URL set: requests go directly to that backend host.
-  - Production (Vercel): set `VITE_API_BASE_URL=https://appifylab-online-task-1.onrender.com`
+  - Production (Vercel): set `VITE_API_BASE_URL=https://striking-cat-production-fed5.up.railway.app`
 
 - `VITE_POST_IMAGE_UPLOAD_PATH` (optional, advanced)
   - Default: `/api/posts/upload-image`
@@ -135,7 +135,7 @@ cp .env.example .env
 ## Production Setup (Vercel -> Render)
 
 1. In Vercel project settings, add env variable:
-   - `VITE_API_BASE_URL=https://appifylab-online-task-1.onrender.com`
+   - `VITE_API_BASE_URL=https://striking-cat-production-fed5.up.railway.app`
 2. Redeploy frontend in Vercel.
 3. In Render backend service env, set:
    - `APP_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://appifylab-one.vercel.app`
