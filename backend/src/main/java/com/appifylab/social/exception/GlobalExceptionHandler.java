@@ -33,6 +33,11 @@ public class GlobalExceptionHandler {
         return build(status, exception.getMessage(), null);
     }
 
+    @ExceptionHandler(DuplicateContentException.class)
+    public ResponseEntity<Map<String, Object>> handleConflict(DuplicateContentException exception) {
+        return build(HttpStatus.CONFLICT, exception.getMessage(), null);
+    }
+
     @ExceptionHandler(MultipartException.class)
     public ResponseEntity<Map<String, Object>> handleMultipart(MultipartException exception) {
         return build(HttpStatus.BAD_REQUEST, "Invalid upload request. Please attach an image file and try again", null);

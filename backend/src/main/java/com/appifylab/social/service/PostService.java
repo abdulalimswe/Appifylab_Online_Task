@@ -13,6 +13,7 @@ import com.appifylab.social.entity.PostVisibility;
 import com.appifylab.social.entity.Reaction;
 import com.appifylab.social.entity.ReactionTargetType;
 import com.appifylab.social.entity.UserAccount;
+import com.appifylab.social.exception.DuplicateContentException;
 import com.appifylab.social.repository.CommentRepository;
 import com.appifylab.social.repository.PostRepository;
 import com.appifylab.social.repository.ReactionRepository;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -104,11 +106,20 @@ public class PostService {
     public CommentResponse addComment(Long postId, CreateCommentRequest request, Authentication authentication) {
         UserAccount author = currentUser(authentication);
         Post post = getPostForInteraction(postId, author);
+        String normalizedContent = normalizeCommentContent(request.content());
+
+        if (commentRepository.existsByPostIdAndAuthorIdAndParentCommentIsNullAndContentIgnoreCase(
+                post.getId(),
+                author.getId(),
+                normalizedContent
+        )) {
+            throw new DuplicateContentException("Duplicate comment is not allowed");
+        }
 
         Comment comment = new Comment();
         comment.setPost(post);
         comment.setAuthor(author);
-        comment.setContent(request.content().trim());
+        comment.setContent(normalizedContent);
 
         Comment saved = commentRepository.save(comment);
         return toCommentResponse(saved, author.getId(), Map.of(), Map.of(saved.getId(), List.of()));
@@ -118,12 +129,21 @@ public class PostService {
     public CommentResponse addReply(Long commentId, CreateCommentRequest request, Authentication authentication) {
         UserAccount author = currentUser(authentication);
         Comment parentComment = getCommentForInteraction(commentId, author);
+        String normalizedContent = normalizeCommentContent(request.content());
+
+        if (commentRepository.existsByParentCommentIdAndAuthorIdAndContentIgnoreCase(
+                parentComment.getId(),
+                author.getId(),
+                normalizedContent
+        )) {
+            throw new DuplicateContentException("Duplicate reply is not allowed");
+        }
 
         Comment reply = new Comment();
         reply.setPost(parentComment.getPost());
         reply.setParentComment(parentComment);
         reply.setAuthor(author);
-        reply.setContent(request.content().trim());
+        reply.setContent(normalizedContent);
 
         Comment saved = commentRepository.save(reply);
         return toCommentResponse(saved, author.getId(), Map.of(), Map.of(saved.getId(), List.of()));
@@ -307,6 +327,32 @@ public class PostService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeCommentContent(String rawContent) {
+        String value = rawContent == null ? "" : rawContent;
+
+        List<String> compacted = value.lines()
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .toList();
+
+        Map<String, String> uniqueLines = new LinkedHashMap<>();
+        for (String line : compacted) {
+            String key = line.replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+            uniqueLines.putIfAbsent(key, line);
+        }
+
+        String normalized = String.join("\n", uniqueLines.values()).trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("Comment content is required");
+        }
+
+        if (normalized.length() > 2000) {
+            throw new IllegalArgumentException("Comment content must be at most 2000 characters");
+        }
+
+        return normalized;
     }
 
     private String profilePhoto(UserAccount user) {

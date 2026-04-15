@@ -1516,6 +1516,26 @@ button {
 
 .feed-comment-submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
+.feed-comment-hint {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  color: var(--clr-text-subtle);
+}
+
+.feed-comment-notice {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--clr-primary);
+  font-weight: 600;
+}
+
+.feed-comment-error {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--clr-danger);
+  font-weight: 600;
+}
+
 /* ============================================================
    COMMENT THREAD
    ============================================================ */

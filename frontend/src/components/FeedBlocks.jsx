@@ -91,6 +91,31 @@ export function formatTimeAgo(value) {
 }
 
 const COMMENTS_PREVIEW_COUNT = 2;
+const MAX_COMMENT_BATCH_SIZE = 5;
+
+function parseUniqueNonEmptyLines(value) {
+  const compacted = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const seen = new Set();
+  const lines = [];
+  let duplicateCount = 0;
+
+  for (const line of compacted) {
+    const dedupeKey = line.replace(/\s+/g, " ").toLowerCase();
+    if (seen.has(dedupeKey)) {
+      duplicateCount += 1;
+      continue;
+    }
+
+    seen.add(dedupeKey);
+    lines.push(line);
+  }
+
+  return { lines, duplicateCount };
+}
 
 /* ─── Primitive components ────────────────────────────────── */
 
@@ -590,6 +615,8 @@ function CommentItem({
   const [replyValue,  setReplyValue]  = useState("");
   const [likePending,  setLikePending]  = useState(false);
   const [replyPending, setReplyPending] = useState(false);
+  const [replyError,   setReplyError]   = useState("");
+  const [replyNotice,  setReplyNotice]  = useState("");
 
   const likes      = comment.likes  || [];
   const replies    = comment.replies || [];
@@ -616,18 +643,53 @@ function CommentItem({
 
   async function handleSubmitReply(e) {
     e.preventDefault();
-    if (!replyValue.trim() || replyPending || !isPersistedEntityId(comment.id)) return;
+    const { lines: replyLines, duplicateCount } = parseUniqueNonEmptyLines(replyValue);
+    if (replyLines.length === 0 || replyPending || !isPersistedEntityId(comment.id)) return;
+
+    if (replyLines.length > MAX_COMMENT_BATCH_SIZE) {
+      setReplyNotice("");
+      setReplyError(`You can submit up to ${MAX_COMMENT_BATCH_SIZE} replies at once.`);
+      return;
+    }
+
     setReplyPending(true);
+    setReplyError("");
+    setReplyNotice(
+      duplicateCount > 0
+        ? `${duplicateCount} duplicate line${duplicateCount > 1 ? "s were" : " was"} skipped automatically.`
+        : ""
+    );
+
     try {
-      const created = await createReply(token, Number(comment.id), replyValue.trim());
-      onReplyCreated(Number(comment.id), created);
+      for (const content of replyLines) {
+        const created = await createReply(token, Number(comment.id), content);
+        onReplyCreated(Number(comment.id), created);
+      }
       setReplyValue("");
       setReplyOpen(false);
       setRepliesOpen(true);
     } catch (err) {
-      if (err instanceof UnauthorizedError) onUnauthorized();
+      if (err instanceof UnauthorizedError) {
+        setReplyNotice("");
+        onUnauthorized();
+      } else {
+        setReplyNotice("");
+        setReplyError(
+          replyLines.length > 1
+            ? "Some replies could not be posted. Please try again."
+            : "Failed to post reply. Please try again."
+        );
+      }
     } finally {
       setReplyPending(false);
+    }
+  }
+
+  async function handleReplyKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      if (e.nativeEvent?.isComposing) return;
+      e.preventDefault();
+      await handleSubmitReply(e);
     }
   }
 
@@ -714,7 +776,12 @@ function CommentItem({
               className="form-control _comment_textarea"
               placeholder={`Reply to ${comment.authorName}…`}
               value={replyValue}
-              onChange={(e) => setReplyValue(e.target.value)}
+              onChange={(e) => {
+                setReplyValue(e.target.value);
+                if (replyError) setReplyError("");
+                if (replyNotice) setReplyNotice("");
+              }}
+              onKeyDown={handleReplyKeyDown}
               rows={2}
               autoFocus
             />
@@ -729,11 +796,18 @@ function CommentItem({
               <button
                 type="submit"
                 className="comment-submit-button"
-                disabled={replyPending || !replyValue.trim()}
+                disabled={replyPending || parseUniqueNonEmptyLines(replyValue).lines.length === 0}
               >
                 {replyPending ? "Sending…" : "Reply"}
               </button>
             </div>
+            <p className="feed-comment-hint">Tip: Press Enter to reply, Shift + Enter for a new line.</p>
+            {replyNotice && (
+              <p className="feed-comment-notice" role="status">{replyNotice}</p>
+            )}
+            {replyError && (
+              <p className="feed-comment-error" role="alert">{replyError}</p>
+            )}
           </form>
         )}
 
@@ -775,6 +849,8 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
   const [postLikePending,    setPostLikePending]    = useState(false);
   const [commentPending,     setCommentPending]     = useState(false);
   const [commentFocused,     setCommentFocused]     = useState(false);
+  const [commentError,       setCommentError]       = useState("");
+  const [commentNotice,      setCommentNotice]      = useState("");
 
   /* Sync incoming post prop changes (e.g. after optimistic update) */
   useEffect(() => {
@@ -838,14 +914,37 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
     }
   }
 
-  async function handleCommentSubmit(e) {
-    e.preventDefault();
-    if (!commentValue.trim() || commentPending || !isPersistedEntityId(post.id)) return;
+  function parseCommentLines(value) {
+    return parseUniqueNonEmptyLines(value);
+  }
+
+  async function submitCommentsBatch() {
+    const { lines: commentLines, duplicateCount } = parseCommentLines(commentValue);
+    if (commentLines.length === 0 || commentPending || !isPersistedEntityId(post.id)) return;
+
+    if (commentLines.length > MAX_COMMENT_BATCH_SIZE) {
+      setCommentNotice("");
+      setCommentError(`You can submit up to ${MAX_COMMENT_BATCH_SIZE} comments at once.`);
+      return;
+    }
+
     setCommentPending(true);
+    setCommentError("");
+    setCommentNotice(
+      duplicateCount > 0
+        ? `${duplicateCount} duplicate line${duplicateCount > 1 ? "s were" : " was"} skipped automatically.`
+        : ""
+    );
+    const createdComments = [];
+
     try {
-      const created = await createComment(token, Number(post.id), commentValue.trim());
+      for (const content of commentLines) {
+        const created = await createComment(token, Number(post.id), content);
+        createdComments.push(created);
+      }
+
       setComments((prev) => {
-        const next = [created, ...prev];
+        const next = [...createdComments.reverse(), ...prev];
         onPostUpdated({ ...post, comments: next });
         return next;
       });
@@ -853,9 +952,41 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
       setCommentsExpanded(true);
       setCommentFocused(false);
     } catch (err) {
-      if (err instanceof UnauthorizedError) onUnauthorized();
+      if (createdComments.length > 0) {
+        setComments((prev) => {
+          const next = [...createdComments.reverse(), ...prev];
+          onPostUpdated({ ...post, comments: next });
+          return next;
+        });
+      }
+
+      if (err instanceof UnauthorizedError) {
+        setCommentNotice("");
+        onUnauthorized();
+      } else {
+        setCommentNotice("");
+        setCommentError(
+          commentLines.length > 1
+            ? "Some comments could not be posted. Please try again."
+            : "Failed to post comment. Please try again."
+        );
+      }
     } finally {
       setCommentPending(false);
+    }
+  }
+
+  async function handleCommentSubmit(e) {
+    e.preventDefault();
+    await submitCommentsBatch();
+  }
+
+  async function handleCommentKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      // Avoid accidental submit while IME composition is in progress.
+      if (e.nativeEvent?.isComposing) return;
+      e.preventDefault();
+      await submitCommentsBatch();
     }
   }
 
@@ -1013,7 +1144,12 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
                 placeholder="Write a thoughtful comment…"
                 id={`comment-input-${post.id}`}
                 value={commentValue}
-                onChange={(e) => setCommentValue(e.target.value)}
+                onChange={(e) => {
+                  setCommentValue(e.target.value);
+                  if (commentError) setCommentError("");
+                  if (commentNotice) setCommentNotice("");
+                }}
+                onKeyDown={handleCommentKeyDown}
                 rows={commentFocused ? 3 : 2}
                 onFocus={() => setCommentFocused(true)}
               />
@@ -1034,6 +1170,13 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
             </button>
           </div>
         </form>
+        <p className="feed-comment-hint">Tip: Press Enter to post, Shift + Enter for a new line. Empty/duplicate lines are auto-cleaned.</p>
+        {commentNotice && (
+          <p className="feed-comment-notice" role="status">{commentNotice}</p>
+        )}
+        {commentError && (
+          <p className="feed-comment-error" role="alert">{commentError}</p>
+        )}
       </div>
 
       {/* ── Comment thread ── */}
