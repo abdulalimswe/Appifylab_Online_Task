@@ -42,6 +42,7 @@ The following screenshots are stored in the root `assets/` folder and document t
 
 - React 18
 - React Router v6
+- Bootstrap 5
 - Vite 5
 
 ## Directory Structure

@@ -1,8 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 /* ============================================================
    DESIGN SYSTEM — TOKENS & RESET
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* ── Single-column feed layout ─────────────────────────── */
+.feed-main-layout {
+  padding: 28px 16px 60px;
+}
+
+.feed-center-column {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.feed-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 52px 24px;
+  background: var(--clr-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--clr-border);
+  text-align: center;
+}
+
+.feed-empty-state .feed-empty-icon {
+  font-size: 3rem;
+  line-height: 1;
+  animation: floatBounce 2.4s ease-in-out infinite;
+}
+
+.feed-empty-state h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--clr-text);
+}
+
+.feed-empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  max-width: 280px;
+}
+
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+
 
 :root {
   /* Color Palette */
