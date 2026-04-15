@@ -680,7 +680,8 @@ function CommentItem({
         onReplyCreated(Number(comment.id), created);
       }
       setReplyValue("");
-      setReplyOpen(false);
+      // Keep the same reply composer open for consecutive replies in this thread.
+      setReplyOpen(true);
       setRepliesOpen(true);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
@@ -751,17 +752,15 @@ function CommentItem({
                   {likePending ? " …" : ""}
                 </button>
               </li>
-              {!isReply && (
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setReplyOpen((c) => !c)}
-                    disabled={!isPersistedEntityId(comment.id)}
-                  >
-                    Reply
-                  </button>
-                </li>
-              )}
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setReplyOpen((c) => !c)}
+                  disabled={!isPersistedEntityId(comment.id)}
+                >
+                  Reply
+                </button>
+              </li>
               {hasReplies && (
                 <li>
                   <button
