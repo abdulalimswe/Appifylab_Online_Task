@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   UnauthorizedError,
   createComment,
@@ -256,8 +256,11 @@ const Icons = {
 
 export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const isFeedRoute = location.pathname.startsWith("/feed");
+  const isProfileRoute = location.pathname.startsWith("/profile");
 
   /* Close when clicking outside */
   useEffect(() => {
@@ -300,7 +303,7 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
 
         <div className="collapse navbar-collapse" id="navbarMain">
           {/* Search */}
-          <div className="_header_form ms-auto me-3">
+          <div className="_header_form ms-lg-auto me-lg-3 mb-3 mb-lg-0">
             <form className="_header_form_grp" onSubmit={(e) => e.preventDefault()}>
               <span className="_header_form_svg" aria-hidden="true">{Icons.search}</span>
               <input
@@ -313,32 +316,37 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
             </form>
           </div>
 
-          {/* Nav icons */}
-          <ul className="navbar-nav mb-2 mb-lg-0 _header_nav_list _mar_r8" style={{ gap: "4px" }}>
+          {/* Nav links */}
+          <ul className="navbar-nav align-items-lg-center mb-2 mb-lg-0 _header_nav_list _mar_r8" style={{ gap: "6px" }}>
             <li className="nav-item _header_nav_item">
               <button
                 type="button"
-                className="nav-link _header_nav_link _header_nav_link_active"
+                className={`nav-link _header_nav_link ${isFeedRoute ? "_header_nav_link_active" : ""}`.trim()}
                 aria-label="Home"
+                aria-current={isFeedRoute ? "page" : undefined}
                 onClick={() => navigate("/feed")}
               >
-                {Icons.home}
+                <span className="_header_nav_link_icon" aria-hidden="true">{Icons.home}</span>
+                <span className="_header_nav_label">Home</span>
               </button>
             </li>
             <li className="nav-item _header_nav_item">
               <button type="button" className="nav-link _header_nav_link" aria-label="Friends">
-                {Icons.people}
+                <span className="_header_nav_link_icon" aria-hidden="true">{Icons.people}</span>
+                <span className="_header_nav_label">Friends</span>
               </button>
             </li>
             <li className="nav-item _header_nav_item">
-              <button type="button" className="nav-link _header_nav_link _header_notify_btn" aria-label="Notifications" style={{ position: "relative" }}>
-                {Icons.bell}
+              <button type="button" className="nav-link _header_nav_link _header_nav_link_with_badge" aria-label="Notifications">
+                <span className="_header_nav_link_icon" aria-hidden="true">{Icons.bell}</span>
+                <span className="_header_nav_label">Notifications</span>
                 <span className="_counting">6</span>
               </button>
             </li>
             <li className="nav-item _header_nav_item">
-              <button type="button" className="nav-link _header_nav_link" aria-label="Messages" style={{ position: "relative" }}>
-                {Icons.chat}
+              <button type="button" className="nav-link _header_nav_link _header_nav_link_with_badge" aria-label="Messages">
+                <span className="_header_nav_link_icon" aria-hidden="true">{Icons.chat}</span>
+                <span className="_header_nav_label">Messages</span>
                 <span className="_counting">2</span>
               </button>
             </li>
@@ -346,14 +354,19 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
 
           {/* Profile dropdown */}
           <div className="_header_nav_profile" ref={dropdownRef}>
-            <div className="_header_nav_profile_image">
+            <button
+              type="button"
+              className={`_header_nav_profile_image ${isProfileRoute ? "is-active" : ""}`.trim()}
+              aria-label="Open profile"
+              aria-current={isProfileRoute ? "page" : undefined}
+              onClick={() => navigate("/profile")}
+            >
               <img
                 src={avatarSrc || "/assets/images/profile-avatar.png"}
                 alt="Your profile"
                 className="_nav_profile_img"
-                  onClick={() => navigate("/profile")}
               />
-            </div>
+            </button>
             <div className="_header_nav_dropdown">
               <div className="_header_nav_name_block" style={{ display: "none" }}>
                 <p className="_header_nav_para">{fullName || "Guest"}</p>
@@ -361,12 +374,13 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
               </div>
               <button
                 id="profile-dropdown-toggle"
-                className="_header_nav_dropdown_btn _dropdown_toggle"
+                className={`_header_nav_dropdown_btn _dropdown_toggle ${profileOpen ? "is-open" : ""}`.trim()}
                 type="button"
                 onClick={() => setProfileOpen((o) => !o)}
                 aria-expanded={profileOpen}
                 aria-label="Open profile menu"
               >
+                <span className="_header_nav_dropdown_btn_text">Menu</span>
                 {Icons.chevronDown}
               </button>
             </div>
@@ -387,7 +401,7 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
                   </div>
                 </div>
                 <hr />
-                <ul className="_nav_dropdown_list" role="menu">
+                <ul className="_nav_dropdown_list" role="menu" aria-label="Profile menu">
                   <li className="_nav_dropdown_list_item" role="menuitem">
                     <button
                       type="button"
