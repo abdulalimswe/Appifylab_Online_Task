@@ -6,7 +6,7 @@
 
 /* ── Single-column feed layout ─────────────────────────── */
 .feed-main-layout {
-  padding: 28px 16px 60px;
+  padding: 104px 16px 60px;
 }
 
 .feed-center-column {
@@ -17,47 +17,65 @@
   gap: 16px;
 }
 
-.feed-profile-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
+.profile-page-layout {
+  padding: 112px 16px 60px;
+}
+
+.profile-page-card {
+  max-width: 1100px;
+  margin: 0 auto;
   background: var(--clr-surface);
   border: 1px solid var(--clr-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  padding: 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 500px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
 }
 
-.feed-profile-card-avatar {
-  border: 3px solid rgba(99,102,241,0.2);
+.profile-page-image-wrap {
+  width: 500px;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--clr-border-strong);
+  background: var(--clr-surface-2);
 }
 
-.feed-profile-card-body {
-  min-width: 0;
+.profile-page-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.feed-profile-card-label {
+.profile-page-content {
+  padding-top: 6px;
+}
+
+.profile-page-label {
   margin: 0;
-  font-size: 0.75rem;
   color: var(--clr-text-muted);
-  font-weight: 600;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  font-weight: 700;
 }
 
-.feed-profile-card-name {
-  margin: 2px 0 0;
-  font-size: 1rem;
-  font-weight: 700;
+.profile-page-name {
+  margin: 10px 0 8px;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1.2;
   color: var(--clr-text);
 }
 
-.feed-profile-card-email {
-  margin: 2px 0 0;
-  font-size: 0.84rem;
+.profile-page-email {
+  margin: 0;
   color: var(--clr-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 1rem;
+  word-break: break-word;
 }
 
 /* ── Empty state ─────────────────────────────────────────── */
@@ -418,8 +436,11 @@ button {
    NAVBAR / FEED HEADER
    ============================================================ */
 .feed-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 100;
   background: rgba(255,255,255,0.88);
   backdrop-filter: blur(18px);
@@ -2037,6 +2058,16 @@ button {
   .feed-header .navbar-collapse { padding: 12px 0 0; }
 
   .feed-header ._inpt1 { min-width: 180px; }
+
+  .profile-page-card {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 20px;
+  }
+
+  .profile-page-content {
+    padding-top: 0;
+  }
 }
 
 /* ============================================================
@@ -2068,9 +2099,9 @@ button {
   /* Nav: collapse non-essential labels */
   ._header_nav_name_block { display: none; }
 
-  .feed-profile-card {
-    padding: 14px;
-    gap: 12px;
+
+  .profile-page-layout {
+    padding-top: 96px;
   }
 }
 

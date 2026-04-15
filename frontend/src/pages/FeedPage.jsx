@@ -2,7 +2,7 @@
  * FeedPage.jsx
  * ─────────────────────────────────────────────────────────────
  * Single-column social feed:
- *   Sticky navbar → Profile → Post composer → News feed
+ *   Fixed navbar → Post composer → News feed
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -19,7 +19,6 @@ import {
   FeedHeader,
   FeedSkeletonList,
   PostCard,
-  UserProfileSection,
 } from "../components/FeedBlocks";
 import { useAuth } from "../context/AuthContext";
 
@@ -181,11 +180,6 @@ function FeedPage() {
 
       <main className="feed-main-layout">
         <div className="feed-center-column">
-          <UserProfileSection
-            fullName={fullName}
-            email={email}
-            avatarSrc={profileAvatar}
-          />
 
           {/* Post composer */}
           <ComposerCard

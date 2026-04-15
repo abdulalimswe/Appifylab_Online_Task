@@ -2,8 +2,7 @@
  * FeedBlocks.jsx
  * ─────────────────────────────────────────────────────────────
  * Reusable, composable UI blocks for the social feed.
- * - FeedHeader       : sticky navbar
- * - UserProfileSection: signed-in user summary card
+ * - FeedHeader       : fixed navbar
  * - StoryRail        : horizontal story tray
  * - ComposerCard     : post composer
  * - PostCard         : full post with like / comment / reply
@@ -12,6 +11,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   UnauthorizedError,
   createComment,
@@ -230,6 +230,7 @@ const Icons = {
    ═══════════════════════════════════════════════════════════ */
 
 export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
+  const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -249,7 +250,12 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
       <div className="container _custom_container">
         {/* Brand */}
         <div className="_logo_wrap">
-          <button type="button" className="navbar-brand _brand_button" aria-label="BuddyScript home">
+          <button
+            type="button"
+            className="navbar-brand _brand_button"
+            aria-label="BuddyScript home"
+            onClick={() => navigate("/feed")}
+          >
             <img src="/assets/images/logo.svg" alt="BuddyScript" className="_nav_logo" />
           </button>
         </div>
@@ -285,7 +291,12 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
           {/* Nav icons */}
           <ul className="navbar-nav mb-2 mb-lg-0 _header_nav_list _mar_r8" style={{ gap: "4px" }}>
             <li className="nav-item _header_nav_item">
-              <button type="button" className="nav-link _header_nav_link _header_nav_link_active" aria-label="Home">
+              <button
+                type="button"
+                className="nav-link _header_nav_link _header_nav_link_active"
+                aria-label="Home"
+                onClick={() => navigate("/feed")}
+              >
                 {Icons.home}
               </button>
             </li>
@@ -315,7 +326,7 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
                 src={avatarSrc || "/assets/images/profile-avatar.png"}
                 alt="Your profile"
                 className="_nav_profile_img"
-                onClick={() => setProfileOpen((o) => !o)}
+                  onClick={() => navigate("/profile")}
               />
             </div>
             <div className="_header_nav_dropdown">
@@ -356,6 +367,21 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
                     <button
                       type="button"
                       className="_nav_dropdown_link _nav_dropdown_button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        navigate("/profile");
+                      }}
+                    >
+                      <div className="_nav_drop_info" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span>View Profile</span>
+                      </div>
+                      {Icons.chevronRight}
+                    </button>
+                  </li>
+                  <li className="_nav_dropdown_list_item" role="menuitem">
+                    <button
+                      type="button"
+                      className="_nav_dropdown_link _nav_dropdown_button"
                       onClick={() => { setProfileOpen(false); onLogout(); }}
                     >
                       <div className="_nav_drop_info" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -375,31 +401,6 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   USER PROFILE SECTION
-   ═══════════════════════════════════════════════════════════ */
-
-export function UserProfileSection({ fullName, email, avatarSrc }) {
-  const resolvedName = fullName || email || "User";
-
-  return (
-    <section className="feed-profile-card" aria-label="Your profile">
-      <div className="feed-profile-card-avatar-wrap">
-        <Avatar
-          src={avatarSrc || "/assets/images/profile-avatar.png"}
-          alt={resolvedName}
-          size={64}
-          className="feed-profile-card-avatar"
-        />
-      </div>
-      <div className="feed-profile-card-body">
-        <p className="feed-profile-card-label">Signed in as</p>
-        <h2 className="feed-profile-card-name">{resolvedName}</h2>
-        <p className="feed-profile-card-email">{email || "No email available"}</p>
-      </div>
-    </section>
-  );
-}
 
 /* ═══════════════════════════════════════════════════════════
    STORY RAIL
