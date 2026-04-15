@@ -784,6 +784,8 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
 
   const likedBy         = useMemo(() => likes.map((e) => e.name).filter(Boolean), [likes]);
   const likeTotal       = typeof post.likeCount === "number" ? post.likeCount : likes.length;
+  const commentTotal    = typeof post.commentCount === "number" ? Math.max(post.commentCount, comments.length) : comments.length;
+  const shareTotal      = typeof post.shareCount === "number" ? post.shareCount : 0;
   const visibleComments = commentsExpanded ? comments : comments.slice(0, COMMENTS_PREVIEW_COUNT);
   const hiddenCount     = Math.max(0, comments.length - COMMENTS_PREVIEW_COUNT);
 
@@ -938,10 +940,10 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
         </div>
         <div className="_feed_inner_timeline_total_reacts_txt">
           <p className="_feed_inner_timeline_total_reacts_para1">
-            <span style={{ fontWeight: 700 }}>{comments.length}</span> Comment{comments.length !== 1 ? "s" : ""}
+            <span style={{ fontWeight: 700 }}>{commentTotal}</span> Comment{commentTotal !== 1 ? "s" : ""}
           </p>
           <p className="_feed_inner_timeline_total_reacts_para2">
-            <span style={{ fontWeight: 700 }}>{Math.max(0, likes.length * 2)}</span> Shares
+            <span style={{ fontWeight: 700 }}>{shareTotal}</span> Shares
           </p>
         </div>
       </div>

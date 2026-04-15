@@ -224,6 +224,24 @@ export function normalizePost(post, index = 0) {
 
   const likedByMe = Boolean(post.reactions?.likedByMe ?? post.likedByMe ?? post.liked);
 
+  const totalComments =
+    typeof post.reactions?.totalComments === "number"
+      ? post.reactions.totalComments
+      : typeof post.commentCount === "number"
+        ? post.commentCount
+        : typeof post.commentsCount === "number"
+          ? post.commentsCount
+          : normalizedComments.length;
+
+  const totalShares =
+    typeof post.reactions?.totalShares === "number"
+      ? post.reactions.totalShares
+      : typeof post.shareCount === "number"
+        ? post.shareCount
+        : typeof post.sharesCount === "number"
+          ? post.sharesCount
+          : 0;
+
   return {
     id: post.id ?? post.postId ?? `${post.createdAt ?? index}-${index}`,
     content: post.content ?? post.message ?? post.text ?? "",
@@ -238,6 +256,8 @@ export function normalizePost(post, index = 0) {
     likedByMe,
     liked: likedByMe,
     comments: normalizedComments,
+    commentCount: totalComments,
+    shareCount: totalShares,
     reactions: post.reactions
   };
 }

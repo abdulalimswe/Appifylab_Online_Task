@@ -2,7 +2,7 @@
  * FeedPage.jsx
  * ─────────────────────────────────────────────────────────────
  * Single-column social feed:
- *   Sticky navbar → Story rail → Post composer → News feed
+ *   Sticky navbar → Profile → Post composer → News feed
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -22,10 +22,6 @@ import {
   UserProfileSection,
 } from "../components/FeedBlocks";
 import { useAuth } from "../context/AuthContext";
-import {
-  demoPosts,
-  sortSeedPostsNewestFirst,
-} from "../data/feedSeeds";
 
 function FeedPage() {
   const navigate = useNavigate();
@@ -68,12 +64,12 @@ function FeedPage() {
       try {
         const data = await fetchPosts(token);
         if (!active) return;
-        setPosts(data.length ? sortByNewestFirst(data) : sortSeedPostsNewestFirst(demoPosts));
+        setPosts(sortByNewestFirst(data));
       } catch (err) {
         if (!active) return;
         if (handleUnauthorized(err)) return;
         setLoadError(err.message || "Unable to load feed");
-        setPosts(sortSeedPostsNewestFirst(demoPosts));
+        setPosts([]);
       } finally {
         if (active) {
           setLoading(false);
