@@ -1,57 +1,6 @@
 const now = Date.now();
 const minutesAgo = (minutes) => new Date(now - minutes * 60 * 1000).toISOString();
 
-export const storyCards = [
-  { id: 1, label: "Your Story", image: "/assets/images/card_ppl1.png", type: "create" },
-  { id: 2, label: "Ryan Roslansky", image: "/assets/images/card_ppl2.png", type: "active" },
-  { id: 3, label: "Dylan Field", image: "/assets/images/card_ppl3.png", type: "inactive" },
-  { id: 4, label: "Steve Jobs", image: "/assets/images/card_ppl4.png", type: "active" }
-];
-
-export const exploreItems = [
-  { id: 1, label: "Learning", badge: "New", href: "#0" },
-  { id: 2, label: "Insights", href: "#0" },
-  { id: 3, label: "Find friends", href: "#0" },
-  { id: 4, label: "Bookmarks", href: "#0" },
-  { id: 5, label: "Group", href: "#0" },
-  { id: 6, label: "Gaming", badge: "New", href: "#0" },
-  { id: 7, label: "Settings", href: "#0" },
-  { id: 8, label: "Save post", href: "#0" }
-];
-
-export const suggestedPeople = [
-  { id: 1, name: "Steve Jobs", role: "CEO of Apple", image: "/assets/images/people1.png" },
-  { id: 2, name: "Ryan Roslansky", role: "CEO of Linkedin", image: "/assets/images/people2.png" },
-  { id: 3, name: "Dylan Field", role: "CEO of Figma", image: "/assets/images/people3.png" }
-];
-
-export const eventCards = [
-  {
-    id: 1,
-    title: "No more terrorism no more cry",
-    date: { day: "10", month: "Jul" },
-    going: 17,
-    image: "/assets/images/feed_event1.png"
-  },
-  {
-    id: 2,
-    title: "No more terrorism no more cry",
-    date: { day: "10", month: "Jul" },
-    going: 17,
-    image: "/assets/images/feed_event1.png"
-  }
-];
-
-export const rightSidebarPeople = [
-  { id: 1, name: "Steve Jobs", role: "CEO of Apple", image: "/assets/images/people1.png", online: false, timeLabel: "5 minute ago" },
-  { id: 2, name: "Ryan Roslansky", role: "CEO of Linkedin", image: "/assets/images/people2.png", online: true },
-  { id: 3, name: "Dylan Field", role: "CEO of Figma", image: "/assets/images/people3.png", online: true },
-  { id: 4, name: "Steve Jobs", role: "CEO of Apple", image: "/assets/images/people1.png", online: false, timeLabel: "5 minute ago" },
-  { id: 5, name: "Ryan Roslansky", role: "CEO of Linkedin", image: "/assets/images/people2.png", online: true },
-  { id: 6, name: "Dylan Field", role: "CEO of Figma", image: "/assets/images/people3.png", online: true },
-  { id: 7, name: "Dylan Field", role: "CEO of Figma", image: "/assets/images/people3.png", online: true },
-  { id: 8, name: "Steve Jobs", role: "CEO of Apple", image: "/assets/images/people1.png", online: false, timeLabel: "5 minute ago" }
-];
 
 export const demoPosts = [
   {

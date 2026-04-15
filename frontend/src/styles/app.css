@@ -17,6 +17,49 @@
   gap: 16px;
 }
 
+.feed-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.feed-profile-card-avatar {
+  border: 3px solid rgba(99,102,241,0.2);
+}
+
+.feed-profile-card-body {
+  min-width: 0;
+}
+
+.feed-profile-card-label {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.feed-profile-card-name {
+  margin: 2px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clr-text);
+}
+
+.feed-profile-card-email {
+  margin: 2px 0 0;
+  font-size: 0.84rem;
+  color: var(--clr-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Empty state ─────────────────────────────────────────── */
 .feed-empty-state {
   display: flex;
@@ -2024,6 +2067,11 @@ button {
 
   /* Nav: collapse non-essential labels */
   ._header_nav_name_block { display: none; }
+
+  .feed-profile-card {
+    padding: 14px;
+    gap: 12px;
+  }
 }
 
 /* ============================================================

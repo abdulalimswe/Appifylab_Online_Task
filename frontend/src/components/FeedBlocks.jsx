@@ -3,14 +3,10 @@
  * ─────────────────────────────────────────────────────────────
  * Reusable, composable UI blocks for the social feed.
  * - FeedHeader       : sticky navbar
- * - SidebarCard      : generic titled sidebar panel
- * - ExploreList      : tag / category navigation
- * - SuggestedPeopleList : "People you may know"
- * - EventList        : upcoming events
+ * - UserProfileSection: signed-in user summary card
  * - StoryRail        : horizontal story tray
  * - ComposerCard     : post composer
  * - PostCard         : full post with like / comment / reply
- * - RightPeopleList  : "Your friends" panel
  * - FeedSkeletonList : loading placeholders
  * - FeedColumnTitle  : section heading w/ action link
  */
@@ -380,116 +376,28 @@ export function FeedHeader({ fullName, email, avatarSrc, onLogout }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SIDEBAR CARD
+   USER PROFILE SECTION
    ═══════════════════════════════════════════════════════════ */
 
-export function SidebarCard({ title, actionLabel, actionHref = "", children, className = "" }) {
+export function UserProfileSection({ fullName, email, avatarSrc }) {
+  const resolvedName = fullName || email || "User";
+
   return (
-    <div className={`_layout_left_sidebar_inner ${className}`.trim()}>
-      <div className="_left_inner_area_suggest _padd_t24 _padd_b6 _padd_r24 _padd_l24 _b_radious6 _feed_inner_area">
-        <div className="_left_inner_area_suggest_content _mar_b24">
-          <h4 className="_left_inner_area_suggest_content_title _title5">{title}</h4>
-          {actionLabel && (
-            <span className="_left_inner_area_suggest_content_txt">
-              {actionHref ? (
-                <a href={actionHref} className="_left_inner_area_suggest_content_txt_link">
-                  {actionLabel}
-                </a>
-              ) : (
-                <button type="button" className="_left_inner_area_suggest_content_txt_link feed-link-button">
-                  {actionLabel}
-                </button>
-              )}
-            </span>
-          )}
-        </div>
-        {children}
+    <section className="feed-profile-card" aria-label="Your profile">
+      <div className="feed-profile-card-avatar-wrap">
+        <Avatar
+          src={avatarSrc || "/assets/images/profile-avatar.png"}
+          alt={resolvedName}
+          size={64}
+          className="feed-profile-card-avatar"
+        />
       </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════
-   EXPLORE LIST
-   ═══════════════════════════════════════════════════════════ */
-
-export function ExploreList({ items }) {
-  return (
-    <ul className="_left_inner_area_explore_list">
-      {items.map((item) => (
-        <li
-          key={item.id}
-          className={`_left_inner_area_explore_item ${item.badge ? "_explore_item" : ""}`.trim()}
-        >
-          <a href={item.href} className="_left_inner_area_explore_link">
-            {item.label}
-          </a>
-          {item.badge && (
-            <span className="_left_inner_area_explore_link_txt">{item.badge}</span>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SUGGESTED PEOPLE LIST
-   ═══════════════════════════════════════════════════════════ */
-
-export function SuggestedPeopleList({ people }) {
-  return (
-    <div className="_left_inner_area_suggest_info_list">
-      {people.map((person) => (
-        <div key={person.id} className="_left_inner_area_suggest_info">
-          <div className="_left_inner_area_suggest_info_box">
-            <div className="_left_inner_area_suggest_info_image">
-              <Avatar src={person.image} alt={person.name} size={42} className="_info_img" />
-            </div>
-            <div className="_left_inner_area_suggest_info_txt">
-              <h4 className="_left_inner_area_suggest_info_title">{person.name}</h4>
-              <p className="_left_inner_area_suggest_info_para">{person.role}</p>
-            </div>
-          </div>
-          <div className="_left_inner_area_suggest_info_link">
-            <button type="button" className="_info_link feed-link-button">
-              Connect
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════
-   EVENT LIST
-   ═══════════════════════════════════════════════════════════ */
-
-export function EventList({ items }) {
-  return (
-    <div className="_left_inner_event_cards">
-      {items.map((event) => (
-        <button key={event.id} type="button" className="_left_inner_event_card_link feed-card-button">
-          <div className="_left_inner_event_card">
-            <div className="_left_inner_event_card_content">
-              <div className="_left_inner_card_date">
-                <p className="_left_inner_card_date_para">{event.date.day}</p>
-                <p className="_left_inner_card_date_para1">{event.date.month}</p>
-              </div>
-              <div className="_left_inner_card_txt">
-                <h4 className="_left_inner_event_card_title">{event.title}</h4>
-              </div>
-            </div>
-            <hr className="_underline" />
-            <div className="_left_inner_event_bottom">
-              <p className="_left_iner_event_bottom">{event.going} going</p>
-              <span className="_left_iner_event_bottom_link">Going</span>
-            </div>
-          </div>
-        </button>
-      ))}
-    </div>
+      <div className="feed-profile-card-body">
+        <p className="feed-profile-card-label">Signed in as</p>
+        <h2 className="feed-profile-card-name">{resolvedName}</h2>
+        <p className="feed-profile-card-email">{email || "No email available"}</p>
+      </div>
+    </section>
   );
 }
 
@@ -1160,82 +1068,6 @@ export function PostCard({ post, currentUser, token, onPostUpdated, onUnauthoriz
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   RIGHT SIDEBAR — YOUR FRIENDS
-   ═══════════════════════════════════════════════════════════ */
-
-export function RightPeopleList({ people }) {
-  return (
-    <div className="_feed_top_fixed">
-      <div className="_feed_right_inner_area_card_content _mar_b24">
-        <h4 className="_feed_right_inner_area_card_content_title _title5">Your Friends</h4>
-        <span>
-          <button type="button" className="_feed_right_inner_area_card_content_txt_link feed-link-button">
-            See All
-          </button>
-        </span>
-      </div>
-
-      <form className="_feed_right_inner_area_card_form" onSubmit={(e) => e.preventDefault()}>
-        <span className="_feed_right_inner_area_card_form_svg" aria-hidden="true">{Icons.search}</span>
-        <input
-          className="form-control _feed_right_inner_area_card_form_inpt"
-          type="search"
-          placeholder="Search friends"
-          aria-label="Search friends"
-          id="friends-search"
-        />
-      </form>
-
-      <div className="_feed_bottom_fixed">
-        {people.map((person) => (
-          <div
-            key={person.id}
-            className={`_feed_right_inner_area_card_ppl ${
-              person.online ? "" : "_feed_right_inner_area_card_ppl_inactive"
-            }`.trim()}
-          >
-            <div className="_feed_right_inner_area_card_ppl_box">
-              <div className="_feed_right_inner_area_card_ppl_image" style={{ position: "relative" }}>
-                <Avatar
-                  src={person.image}
-                  alt={person.name}
-                  size={40}
-                  className="_box_ppl_img"
-                />
-                {person.online && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    fill="none"
-                    viewBox="0 0 14 14"
-                    style={{ position: "absolute", bottom: 0, right: 0 }}
-                  >
-                    <rect width="12" height="12" x="1" y="1" fill="#10b981" stroke="#fff" strokeWidth="2" rx="6"/>
-                  </svg>
-                )}
-              </div>
-              <div className="_feed_right_inner_area_card_ppl_txt">
-                <h4 className="_feed_right_inner_area_card_ppl_title">{person.name}</h4>
-                <p className="_feed_right_inner_area_card_ppl_para">{person.role}</p>
-              </div>
-            </div>
-            <div className="_feed_right_inner_area_card_ppl_side">
-              {person.online ? (
-                <span style={{ fontSize: "0.72rem", color: "var(--clr-success)", fontWeight: 600 }}>
-                  Online
-                </span>
-              ) : (
-                <span>{person.timeLabel || "5m ago"}</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /* ═══════════════════════════════════════════════════════════
    SKELETON LOADER

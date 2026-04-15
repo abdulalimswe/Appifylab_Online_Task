@@ -19,13 +19,12 @@ import {
   FeedHeader,
   FeedSkeletonList,
   PostCard,
-  StoryRail,
+  UserProfileSection,
 } from "../components/FeedBlocks";
 import { useAuth } from "../context/AuthContext";
 import {
   demoPosts,
   sortSeedPostsNewestFirst,
-  storyCards,
 } from "../data/feedSeeds";
 
 function FeedPage() {
@@ -186,9 +185,11 @@ function FeedPage() {
 
       <main className="feed-main-layout">
         <div className="feed-center-column">
-
-          {/* Stories */}
-          <StoryRail stories={storyCards} />
+          <UserProfileSection
+            fullName={fullName}
+            email={email}
+            avatarSrc={profileAvatar}
+          />
 
           {/* Post composer */}
           <ComposerCard
